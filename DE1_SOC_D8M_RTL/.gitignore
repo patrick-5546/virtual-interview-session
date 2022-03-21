@@ -1,0 +1,13 @@
+# Quartus II generated folders and files
+/db/
+/incremental_db/
+/.qsys_edit
+/*.txt
+/*.qws
+/*.rpt
+/*.smsg
+/*.sopcinfo
+/*.summary
+
+# Platform Designer output directory
+# /DE1_SOC_D8M_RTL/
