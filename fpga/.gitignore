@@ -2,7 +2,6 @@
 /db/*
 /incremental_db/*
 /output_files/*
-!/output_files/*.cdf
 /.qsys_edit
 /*.txt
 /*.qws
