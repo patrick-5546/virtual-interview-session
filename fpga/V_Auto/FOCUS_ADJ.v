@@ -113,7 +113,7 @@ VCM_I2C i2c2(
 //-----VIDEO MIXED  -- 
 
 always @( negedge VIDEO_CLK ) 
-   if ( (SW_FUC_LINE & (LINE || (V_CNT == 262 && H_CNT == 400)))  ||  (SW_FUC_ALL_CEN  &  (~VCM_END & LINE || (V_CNT == 262 && H_CNT == 400))) ) begin
+   if ( (SW_FUC_LINE & (LINE || (V_CNT == 240 && H_CNT == 320)))  ||  (SW_FUC_ALL_CEN  &  (~VCM_END & LINE || (V_CNT == 240 && H_CNT == 320))) ) begin
       {oR, oG, oB} <= {8'hFF, 8'hFF, 8'h0};
    end
    else begin

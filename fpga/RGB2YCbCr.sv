@@ -23,7 +23,7 @@ module RGB2YCbCr (
     SevenSegmentDisplayDecoder sevenseg0 ( .ssOut( HEXB0 ), .nIn( rB0 ) );
 
     always_ff @( posedge CLK ) begin
-        if ( V_CNT == 262 && H_CNT == 400) begin
+        if ( V_CNT == 240 && H_CNT == 320) begin
             if ( COUNT > 60 ) begin  // VGA is 60 fps, so update once per second
                 {rR1, rR0} <= iR;
                 {rG1, rG0} <= iG;
