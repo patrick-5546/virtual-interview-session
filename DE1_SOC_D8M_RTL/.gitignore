@@ -1,6 +1,9 @@
 # Quartus II generated folders and files
-/db/
-/incremental_db/
+/db/*
+/incremental_db/*
+/output_files/*
+!/output_files/*.cdf
+!/output_files/*.sof
 /.qsys_edit
 /*.txt
 /*.qws
