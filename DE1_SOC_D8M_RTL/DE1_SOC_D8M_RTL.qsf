@@ -547,6 +547,8 @@ set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
 
 
 
+set_global_assignment -name VERILOG_FILE SevenSegmentDisplayDecoder.v
+set_global_assignment -name SYSTEMVERILOG_FILE RGB2YCbCr.sv
 set_global_assignment -name VERILOG_FILE V/CLOCK_DELAY.v
 set_global_assignment -name VERILOG_FILE V_D8M/VGA_RD_COUNTER.v
 set_global_assignment -name VERILOG_FILE V/I2C_WRITE_WDATA.v

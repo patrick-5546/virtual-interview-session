@@ -144,6 +144,8 @@ wire [9:0]  LUT_MIPI_PIXEL_D;
 wire        MIPI_PIXEL_CLK_;
 wire [9:0]  PCK;
 
+wire [15:0] V_CNT, H_CNT;
+
 //=======================================================
 // Structural coding
 //=======================================================
@@ -159,10 +161,10 @@ assign LUT_MIPI_PIXEL_D =MIPI_PIXEL_D ;
 assign UART_RTS =0;
 assign UART_TXD =0;
 //------HEX OFF --
-assign HEX2           = 7'h7F;
-assign HEX3           = 7'h7F;
-assign HEX4           = 7'h7F;
-assign HEX5           = 7'h7F;
+// assign HEX2           = 7'h7F;
+// assign HEX3           = 7'h7F;
+// assign HEX4           = 7'h7F;
+// assign HEX5           = 7'h7F;
 
 //------ MIPI BRIGE & CAMERA RESET  --
 assign CAMERA_PWDN_n  = 1;
@@ -297,7 +299,24 @@ FOCUS_ADJ adl(
 
                       .READY         ( READY ),
                       .SCL           ( CAMERA_I2C_SCL_AF ),
-                      .SDA           ( CAMERA_I2C_SDA )
+                      .SDA           ( CAMERA_I2C_SDA ),
+
+					  .V_CNT		 ( V_CNT ),
+					  .H_CNT		 ( H_CNT )
+);
+
+//------RGB to YCbCr conversion --
+RGB2YCbCr	r2y (
+	.CLK			( VGA_CLK ),
+	.V_CNT			( V_CNT ),
+	.H_CNT			( H_CNT ),
+	.iR				( VGA_R ),
+	.iG				( VGA_G ),
+	.iB				( VGA_B ),
+
+	.oHEXR			( {HEX5, HEX4} ),
+	.oHEXG			( {HEX3, HEX2} ),
+	.oHEXB			( {HEX1, HEX0} )
 );
 
 //------VGA Controller  --
@@ -328,8 +347,8 @@ FpsMonitor uFps(
 	   .clk50    ( CLOCK2_50 ),
 	   .vs       ( LUT_MIPI_PIXEL_VS ),
 	   .fps      (),
-	   .hex_fps_h( HEX1 ),
-	   .hex_fps_l( HEX0 )
+	   .hex_fps_h(  ),
+	   .hex_fps_l(  )
 );
 
 //--LED DISPLAY--
