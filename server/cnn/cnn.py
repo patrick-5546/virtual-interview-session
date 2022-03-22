@@ -178,8 +178,8 @@ def run(input_file, model, cnn_face_detector, transform):
 def init_model():
 
     # from http://dlib.net/files/mmod_human_face_detector.dat.bz2
-    CNN_FACE_MODEL = '../data/mmod_human_face_detector.dat'
-    model_weight = '../data/model_weights.pkl'
+    CNN_FACE_MODEL = 'data/mmod_human_face_detector.dat'
+    model_weight = 'data/model_weights.pkl'
 
     # load model weights
     model = model_static(model_weight)
@@ -200,7 +200,7 @@ def init_model():
 
 def run_single_images(model, cnn_face_detector, transform):
 
-    run(input_file=f'../data/test_imgs/1_resized.jpg',
+    run(input_file=f'/data/test_imgs/1_resized.jpg',
         model=model,
         cnn_face_detector=cnn_face_detector,
         transform=transform)
