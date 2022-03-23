@@ -8,6 +8,9 @@ from torchvision import transforms
 from PIL import Image
 from tqdm import tqdm
 import sys
+from io import BytesIO
+import numpy as np
+import base64
 
 
 def model_static(pretrained=False, **kwargs):
@@ -128,52 +131,40 @@ class Bottleneck(nn.Module):
         return out
 
 
-def run(input_file, model, cnn_face_detector, transform):
+def run(base64_encoded_jpeg, model, cnn_face_detector, transform):
 
-    cap = cv2.VideoCapture(input_file)
+    with open(base64_encoded_jpeg, "r") as f:
+        data = f.read()
+    im = Image.open(BytesIO(base64.b64decode(data)))
+    frame = np.array(im)
 
-    if (cap.isOpened() == False):
-        print("Error opening video stream or file")
-        exit()
+    bbox = []
 
-    # frame reading + processing
+    dets = cnn_face_detector(frame, 1)
 
-    while(cap.isOpened()):
-        ret, frame = cap.read()
-        if ret == True:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            bbox = []
+    for d in dets:
+        l = d.rect.left()
+        r = d.rect.right()
+        t = d.rect.top()
+        b = d.rect.bottom()
+        # expand a bit
+        l -= (r-l)*0.2
+        r += (r-l)*0.2
+        t -= (b-t)*0.2
+        b += (b-t)*0.2
+        bbox.append([l, t, r, b])
 
-            dets = cnn_face_detector(frame, 1)
-            for d in tqdm(dets):
-                l = d.rect.left()
-                r = d.rect.right()
-                t = d.rect.top()
-                b = d.rect.bottom()
-                # expand a bit
-                l -= (r-l)*0.2
-                r += (r-l)*0.2
-                t -= (b-t)*0.2
-                b += (b-t)*0.2
-                bbox.append([l, t, r, b])
+        frame = Image.fromarray(frame)
+        for b in bbox:
+            face = frame.crop((b))
+            img = transform(face)
+            img.unsqueeze_(0)
 
-            frame = Image.fromarray(frame)
-            for b in bbox:
-                face = frame.crop((b))
-                img = transform(face)
-                img.unsqueeze_(0)
+            # forward pass
+            output = model(img)
+            score = torch.sigmoid(output).item()
 
-                # forward pass
-                output = model(img)
-                score = torch.sigmoid(output).item()
-
-                print(score)
-
-        else:
-            break
-    cap.release()
-    print("Done processing image.")
-
+    print(score)
 
 def init_model():
 
@@ -197,24 +188,13 @@ def init_model():
 
     return model, cnn_face_detector, transform
 
-
-def run_single_images(model, cnn_face_detector, transform):
-
-    run(input_file=f'/data/test_imgs/1_resized.jpg',
-        model=model,
-        cnn_face_detector=cnn_face_detector,
-        transform=transform)
-
-
 if __name__ == "__main__":
     model, cnn_face_detector, transform = init_model()
-    if len(sys.argv) == 1:
-        raise SyntaxError("Insufficient arguments. Must supply a path")
-    if len(sys.argv) == 2:
-        # If there are keyword arguments
-        run(input_file=sys.argv[1], model=model,
-            cnn_face_detector=cnn_face_detector, transform=transform)
+
+    if len(sys.argv) != 2:
+        raise SyntaxError(
+            "Insufficient arguments. Supply a path to a text file containing a base-64 encoded JPEG")
     else:
-        # If there are no keyword arguments
-        run_single_images(
-            model=model, cnn_face_detector=cnn_face_detector, transform=transform)
+        # If there are keyword arguments
+        run(base64_encoded_jpeg=sys.argv[1], model=model,
+            cnn_face_detector=cnn_face_detector, transform=transform)
