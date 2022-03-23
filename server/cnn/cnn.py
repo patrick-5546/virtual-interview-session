@@ -166,6 +166,7 @@ def run(base64_encoded_jpeg, model, cnn_face_detector, transform):
 
     print(score)
 
+
 def init_model():
 
     # from http://dlib.net/files/mmod_human_face_detector.dat.bz2
@@ -187,6 +188,7 @@ def init_model():
                                     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
     return model, cnn_face_detector, transform
+
 
 if __name__ == "__main__":
     model, cnn_face_detector, transform = init_model()
