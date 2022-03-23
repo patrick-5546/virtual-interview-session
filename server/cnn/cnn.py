@@ -2,11 +2,9 @@ import torch
 import torch.nn as nn
 import math
 import dlib
-import cv2
 import torch.nn.functional as F
 from torchvision import transforms
 from PIL import Image
-from tqdm import tqdm
 import sys
 from io import BytesIO
 import numpy as np
