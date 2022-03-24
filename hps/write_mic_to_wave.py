@@ -1,14 +1,17 @@
 ''' Records audio for 5 seconds then:
     - Plays it back if PLAY_BACK_AUDIO is True
+    - Posts wave_data as a JSON object to SERVER_ENDPOINT
 '''
 
-import sys
 import audio
-import struct
+import json
+import requests
+import sys
 
-SAMPLING_RATE = audio.MIN_SAMPLING_RATE  # 8000 Hz
-PLAY_BACK_AUDIO = True
 AUDIO_TO_WAV_DIVIDER = 2**12 - 1
+PLAY_BACK_AUDIO = True
+SAMPLING_RATE = audio.MIN_SAMPLING_RATE  # 8000 Hz
+SERVER_ENDPOINT = 'http://34.222.245.107:4000/api/audio'
 
 if not audio.open_dev():
     sys.exit()
@@ -36,5 +39,8 @@ if PLAY_BACK_AUDIO:
         audio.write_right(left)
 
 audio.close()
+
+print('Posting wave_data')
+requests.post(SERVER_ENDPOINT, json=json.dumps(wave_data))
 
 print('Exiting program')
