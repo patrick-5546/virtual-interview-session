@@ -1,3 +1,7 @@
+//=======================================================
+//  This code was given in UBC CPEN 391 2021W T1
+//=======================================================
+
 module SevenSegmentDisplayDecoder(ssOut, nIn);
   output [6:0] ssOut;
   reg [6:0] ssOut_tmp;
