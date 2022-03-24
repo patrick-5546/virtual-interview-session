@@ -101,8 +101,87 @@ module DE1_SOC_D8M_RTL(
 	output		          		MIPI_RESET_n,
 
 	//////////// GPIO_0, GPIO_0 connect to GPIO Default //////////
-	inout 		    [35:0]		GPIO
+	inout 		    [35:0]		GPIO,
 
+	////////////////////////////////////
+	// HPS Pins
+	////////////////////////////////////
+
+	// DDR3 SDRAM
+	output		[14: 0]	HPS_DDR3_ADDR,
+	output		[ 2: 0]  HPS_DDR3_BA,
+	output					HPS_DDR3_CAS_N,
+	output					HPS_DDR3_CKE,
+	output					HPS_DDR3_CK_N,
+	output					HPS_DDR3_CK_P,
+	output					HPS_DDR3_CS_N,
+	output		[ 3: 0]	HPS_DDR3_DM,
+	inout			[31: 0]	HPS_DDR3_DQ,
+	inout			[ 3: 0]	HPS_DDR3_DQS_N,
+	inout			[ 3: 0]	HPS_DDR3_DQS_P,
+	output					HPS_DDR3_ODT,
+	output					HPS_DDR3_RAS_N,
+	output					HPS_DDR3_RESET_N,
+	input						HPS_DDR3_RZQ,
+	output					HPS_DDR3_WE_N,
+
+	// Ethernet
+	output					HPS_ENET_GTX_CLK,
+	inout						HPS_ENET_INT_N,
+	output					HPS_ENET_MDC,
+	inout						HPS_ENET_MDIO,
+	input						HPS_ENET_RX_CLK,
+	input			[ 3: 0]	HPS_ENET_RX_DATA,
+	input						HPS_ENET_RX_DV,
+	output		[ 3: 0]	HPS_ENET_TX_DATA,
+	output					HPS_ENET_TX_EN,
+
+	// Flash
+	inout			[ 3: 0]	HPS_FLASH_DATA,
+	output					HPS_FLASH_DCLK,
+	output					HPS_FLASH_NCSO,
+
+	// Accelerometer
+	inout						HPS_GSENSOR_INT,
+
+	// General Purpose I/O
+	inout			[ 1: 0]	HPS_GPIO,
+
+	// I2C
+	inout						HPS_I2C_CONTROL,
+	inout						HPS_I2C1_SCLK,
+	inout						HPS_I2C1_SDAT,
+	inout						HPS_I2C2_SCLK,
+	inout						HPS_I2C2_SDAT,
+
+	// Pushbutton
+	inout						HPS_KEY,
+
+	// LED
+	inout						HPS_LED,
+
+	// SD Card
+	output					HPS_SD_CLK,
+	inout						HPS_SD_CMD,
+	inout			[ 3: 0]	HPS_SD_DATA,
+
+	// SPI
+	output					HPS_SPIM_CLK,
+	input						HPS_SPIM_MISO,
+	output					HPS_SPIM_MOSI,
+	inout						HPS_SPIM_SS,
+
+	// UART
+	input						HPS_UART_RX,
+	output					HPS_UART_TX,
+
+	// USB
+	inout						HPS_CONV_USB_N,
+	input						HPS_USB_CLKOUT,
+	inout			[ 7: 0]	HPS_USB_DATA,
+	input						HPS_USB_DIR,
+	input						HPS_USB_NXT,
+	output					HPS_USB_STP
 );
 
 //=============================================================================
@@ -145,6 +224,8 @@ wire        MIPI_PIXEL_CLK_;
 wire [9:0]  PCK;
 
 wire [15:0] V_CNT, H_CNT;
+
+wire altclkctrl_audio_clk;
 
 //=======================================================
 // Structural coding
@@ -357,5 +438,134 @@ CLOCKMEM  ck2 ( .CLK(MIPI_REFCLK),   	.CLK_FREQ(20000000), 	.CK_1HZ (D8M_CK_HZ2)
 CLOCKMEM  ck3 ( .CLK(MIPI_PIXEL_CLK_),  .CLK_FREQ(25000000), 	.CK_1HZ (D8M_CK_HZ3) );  //25MHZ
 
 assign LEDR = { D8M_CK_HZ, D8M_CK_HZ2, D8M_CK_HZ3, 5'h0, CAMERA_MIPI_RELAESE, MIPI_BRIDGE_RELEASE };
+
+altclkctrl_audio acca( .inclk(CLOCK3_50), .outclk(altclkctrl_audio_clk) );
+
+Computer_System The_System (
+	////////////////////////////////////
+	// FPGA Side
+	////////////////////////////////////
+
+	// Global signals
+	.system_pll_ref_clk_clk					(CLOCK_50),
+	.system_pll_ref_reset_reset			(1'b0),
+
+	// AV Config
+	.av_config_SCLK							(FPGA_I2C_SCLK),
+	.av_config_SDAT							(FPGA_I2C_SDAT),
+
+	// Audio Subsystem
+	.audio_pll_ref_clk_clk					(altclkctrl_audio_clk),
+	.audio_pll_ref_reset_reset				(1'b0),
+	.audio_pll_clk_clk						(AUD_XCK),
+	.audio_ADCDAT							(AUD_ADCDAT),
+	.audio_ADCLRCK							(AUD_ADCLRCK),
+	.audio_BCLK								(AUD_BCLK),
+	.audio_DACDAT							(AUD_DACDAT),
+	.audio_DACLRCK							(AUD_DACLRCK),
+
+	// IrDA
+	.irda_RXD									(IRDA_RXD),
+	.irda_TXD									(IRDA_TXD),
+
+	////////////////////////////////////
+	// HPS Side
+	////////////////////////////////////
+	// DDR3 SDRAM
+	.memory_mem_a			(HPS_DDR3_ADDR),
+	.memory_mem_ba			(HPS_DDR3_BA),
+	.memory_mem_ck			(HPS_DDR3_CK_P),
+	.memory_mem_ck_n		(HPS_DDR3_CK_N),
+	.memory_mem_cke		(HPS_DDR3_CKE),
+	.memory_mem_cs_n		(HPS_DDR3_CS_N),
+	.memory_mem_ras_n		(HPS_DDR3_RAS_N),
+	.memory_mem_cas_n		(HPS_DDR3_CAS_N),
+	.memory_mem_we_n		(HPS_DDR3_WE_N),
+	.memory_mem_reset_n	(HPS_DDR3_RESET_N),
+	.memory_mem_dq			(HPS_DDR3_DQ),
+	.memory_mem_dqs		(HPS_DDR3_DQS_P),
+	.memory_mem_dqs_n		(HPS_DDR3_DQS_N),
+	.memory_mem_odt		(HPS_DDR3_ODT),
+	.memory_mem_dm			(HPS_DDR3_DM),
+	.memory_oct_rzqin		(HPS_DDR3_RZQ),
+		  
+	// Ethernet
+	.hps_io_hps_io_gpio_inst_GPIO35	(HPS_ENET_INT_N),
+	.hps_io_hps_io_emac1_inst_TX_CLK	(HPS_ENET_GTX_CLK),
+	.hps_io_hps_io_emac1_inst_TXD0	(HPS_ENET_TX_DATA[0]),
+	.hps_io_hps_io_emac1_inst_TXD1	(HPS_ENET_TX_DATA[1]),
+	.hps_io_hps_io_emac1_inst_TXD2	(HPS_ENET_TX_DATA[2]),
+	.hps_io_hps_io_emac1_inst_TXD3	(HPS_ENET_TX_DATA[3]),
+	.hps_io_hps_io_emac1_inst_RXD0	(HPS_ENET_RX_DATA[0]),
+	.hps_io_hps_io_emac1_inst_MDIO	(HPS_ENET_MDIO),
+	.hps_io_hps_io_emac1_inst_MDC		(HPS_ENET_MDC),
+	.hps_io_hps_io_emac1_inst_RX_CTL	(HPS_ENET_RX_DV),
+	.hps_io_hps_io_emac1_inst_TX_CTL	(HPS_ENET_TX_EN),
+	.hps_io_hps_io_emac1_inst_RX_CLK	(HPS_ENET_RX_CLK),
+	.hps_io_hps_io_emac1_inst_RXD1	(HPS_ENET_RX_DATA[1]),
+	.hps_io_hps_io_emac1_inst_RXD2	(HPS_ENET_RX_DATA[2]),
+	.hps_io_hps_io_emac1_inst_RXD3	(HPS_ENET_RX_DATA[3]),
+
+	// Flash
+	.hps_io_hps_io_qspi_inst_IO0	(HPS_FLASH_DATA[0]),
+	.hps_io_hps_io_qspi_inst_IO1	(HPS_FLASH_DATA[1]),
+	.hps_io_hps_io_qspi_inst_IO2	(HPS_FLASH_DATA[2]),
+	.hps_io_hps_io_qspi_inst_IO3	(HPS_FLASH_DATA[3]),
+	.hps_io_hps_io_qspi_inst_SS0	(HPS_FLASH_NCSO),
+	.hps_io_hps_io_qspi_inst_CLK	(HPS_FLASH_DCLK),
+
+	// Accelerometer
+	.hps_io_hps_io_gpio_inst_GPIO61	(HPS_GSENSOR_INT),
+
+	// General Purpose I/O
+	.hps_io_hps_io_gpio_inst_GPIO40	(HPS_GPIO[0]),
+	.hps_io_hps_io_gpio_inst_GPIO41	(HPS_GPIO[1]),
+
+	// I2C
+	.hps_io_hps_io_gpio_inst_GPIO48	(HPS_I2C_CONTROL),
+	.hps_io_hps_io_i2c0_inst_SDA		(HPS_I2C1_SDAT),
+	.hps_io_hps_io_i2c0_inst_SCL		(HPS_I2C1_SCLK),
+	.hps_io_hps_io_i2c1_inst_SDA		(HPS_I2C2_SDAT),
+	.hps_io_hps_io_i2c1_inst_SCL		(HPS_I2C2_SCLK),
+
+	// Pushbutton
+	.hps_io_hps_io_gpio_inst_GPIO54	(HPS_KEY),
+
+	// LED
+	.hps_io_hps_io_gpio_inst_GPIO53	(HPS_LED),
+
+	// SD Card
+	.hps_io_hps_io_sdio_inst_CMD	(HPS_SD_CMD),
+	.hps_io_hps_io_sdio_inst_D0	(HPS_SD_DATA[0]),
+	.hps_io_hps_io_sdio_inst_D1	(HPS_SD_DATA[1]),
+	.hps_io_hps_io_sdio_inst_CLK	(HPS_SD_CLK),
+	.hps_io_hps_io_sdio_inst_D2	(HPS_SD_DATA[2]),
+	.hps_io_hps_io_sdio_inst_D3	(HPS_SD_DATA[3]),
+
+	// SPI
+	.hps_io_hps_io_spim1_inst_CLK		(HPS_SPIM_CLK),
+	.hps_io_hps_io_spim1_inst_MOSI	(HPS_SPIM_MOSI),
+	.hps_io_hps_io_spim1_inst_MISO	(HPS_SPIM_MISO),
+	.hps_io_hps_io_spim1_inst_SS0		(HPS_SPIM_SS),
+
+	// UART
+	.hps_io_hps_io_uart0_inst_RX	(HPS_UART_RX),
+	.hps_io_hps_io_uart0_inst_TX	(HPS_UART_TX),
+
+	// USB
+	.hps_io_hps_io_gpio_inst_GPIO09	(HPS_CONV_USB_N),
+	.hps_io_hps_io_usb1_inst_D0		(HPS_USB_DATA[0]),
+	.hps_io_hps_io_usb1_inst_D1		(HPS_USB_DATA[1]),
+	.hps_io_hps_io_usb1_inst_D2		(HPS_USB_DATA[2]),
+	.hps_io_hps_io_usb1_inst_D3		(HPS_USB_DATA[3]),
+	.hps_io_hps_io_usb1_inst_D4		(HPS_USB_DATA[4]),
+	.hps_io_hps_io_usb1_inst_D5		(HPS_USB_DATA[5]),
+	.hps_io_hps_io_usb1_inst_D6		(HPS_USB_DATA[6]),
+	.hps_io_hps_io_usb1_inst_D7		(HPS_USB_DATA[7]),
+	.hps_io_hps_io_usb1_inst_CLK		(HPS_USB_CLKOUT),
+	.hps_io_hps_io_usb1_inst_STP		(HPS_USB_STP),
+	.hps_io_hps_io_usb1_inst_DIR		(HPS_USB_DIR),
+	.hps_io_hps_io_usb1_inst_NXT		(HPS_USB_NXT)
+);
 
 endmodule

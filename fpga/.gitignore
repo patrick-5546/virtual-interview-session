@@ -3,6 +3,7 @@
 /incremental_db/*
 /output_files/*
 /.qsys_edit
+/*.csv
 /*.txt
 /*.qws
 /*.rpt
@@ -11,4 +12,6 @@
 /*.summary
 
 # Platform Designer output directory
-# /DE1_SOC_D8M_RTL/
+/altclkctrl_audio/*
+/Computer_System/*
+/hps_isw_handoff/*
