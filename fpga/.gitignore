@@ -11,7 +11,17 @@
 /*.sopcinfo
 /*.summary
 
-# Platform Designer output directory
+# Platform Designer output folders
 /altclkctrl_audio/*
 /Computer_System/*
 /hps_isw_handoff/*
+
+# Nios II generated folders and files
+.metadata/
+.qsys_edit/
+RemoteSystemsTempFiles/
+software/*/obj/
+!software/*_bsp/obj/
+software/*/*.elf
+software/*/*.map
+software/*/*.objdump
