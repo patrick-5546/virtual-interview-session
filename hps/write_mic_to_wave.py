@@ -1,47 +1,40 @@
-''' Records audio for 5 seconds and plays it back '''
+''' Records audio for 5 seconds then:
+    - Plays it back if PLAY_BACK_AUDIO is True
+'''
+
 import sys
 import audio
-import wave
 import struct
-from numpy.fft import fft, ifft
-#import matplotlib.pyplot as plt
+
+SAMPLING_RATE = audio.MIN_SAMPLING_RATE  # 8000 Hz
+PLAY_BACK_AUDIO = True
+AUDIO_TO_WAV_DIVIDER = 2**12 - 1
 
 if not audio.open_dev():
     sys.exit()
-audio.init()
-out = wave.open('output.wav','w')
-out.setnchannels(1)
-out.setsampwidth(2)
 
-sampling_rate = 8000   #audio.MIN_SAMPLING_RATE
-print(sampling_rate)
-audio.sampling_rate(sampling_rate)
-out.setframerate(sampling_rate)
-
+print('Audio will be recorded at ' + str(SAMPLING_RATE) + ' Hz')
 print('Recording audio')
-channels = []
-for _ in range(sampling_rate * 5):
+wave_data = []
+audio.init()
+audio.sampling_rate(SAMPLING_RATE)
+for _ in range(SAMPLING_RATE * 5):
     audio.wait_read()
-    left, right = audio.read()
-    out.writeframesraw(struct.pack('<h', left/((2**12)-1)))
-    channels.append((left, right))
+    left, _ = audio.read()
+    wave_data.append(left / AUDIO_TO_WAV_DIVIDER)
 
-print('Playing back audio')
-volume_multiplier = 42
-max_volume = -1
-for left, right in channels:
-    audio.wait_write()
-    if left > max_volume:
-        max_volume = left
-    if right > max_volume:
-        max_volume = right
-    if left > audio.MAX_VOLUME / volume_multiplier or right > audio.MAX_VOLUME / volume_multiplier:
-        print('Max volume exceeded')
-        continue
-    audio.write_left(volume_multiplier * left)
-    audio.write_right(volume_multiplier * right)
+if PLAY_BACK_AUDIO:
+    print('Playing back audio')
+    volume_multiplier = 42
+    for data in wave_data:
+        audio.wait_write()
+        left = data * AUDIO_TO_WAV_DIVIDER * volume_multiplier
+        if left > audio.MAX_VOLUME:
+            print('WARN: Max volume exceeded, writing audio.MAX_VOLUME')
+            left = audio.MAX_VOLUME
+        audio.write_left(left)
+        audio.write_right(left)
 
-out.close()
-audio.close() 
-print("Exiting program, max volume={}\n".format(max_volume))
+audio.close()
 
+print('Exiting program')
