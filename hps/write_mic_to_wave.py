@@ -41,6 +41,6 @@ if PLAY_BACK_AUDIO:
 audio.close()
 
 print('Posting wave_data')
-requests.post(SERVER_ENDPOINT, json=json.dumps(wave_data))
+requests.post(SERVER_ENDPOINT, data=json.dumps(wave_data))
 
 print('Exiting program')
