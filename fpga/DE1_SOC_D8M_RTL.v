@@ -428,9 +428,16 @@ FpsMonitor uFps(
 	   .clk50    ( CLOCK2_50 ),
 	   .vs       ( LUT_MIPI_PIXEL_VS ),
 	   .fps      (),
-	   .hex_fps_h(  ),
-	   .hex_fps_l(  )
+	   .hex_fps_h(),
+	   .hex_fps_l()
 );
+// FpsMonitor uFps(
+// 	   .clk50    ( CLOCK2_50 ),
+// 	   .vs       ( LUT_MIPI_PIXEL_VS ),
+// 	   .fps      (),
+// 	   .hex_fps_h( HEX1 ),
+// 	   .hex_fps_l( HEX0 )
+// );
 
 //--LED DISPLAY--
 CLOCKMEM  ck1 ( .CLK(VGA_CLK),   		.CLK_FREQ(25000000),	.CK_1HZ (D8M_CK_HZ)  );  //25MHZ
