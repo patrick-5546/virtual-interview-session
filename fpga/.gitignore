@@ -12,7 +12,6 @@
 /*.summary
 
 # Platform Designer output folders
-/altclkctrl_audio/*
 /Computer_System/*
 /hps_isw_handoff/*
 

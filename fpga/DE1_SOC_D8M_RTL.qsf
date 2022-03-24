@@ -870,7 +870,6 @@ set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
 
 
 
-set_global_assignment -name QIP_FILE altclkctrl_audio/synthesis/altclkctrl_audio.qip
 set_global_assignment -name QIP_FILE Computer_System/synthesis/Computer_System.qip
 set_global_assignment -name VERILOG_FILE SevenSegmentDisplayDecoder.v
 set_global_assignment -name SYSTEMVERILOG_FILE RGB2YCbCr.sv

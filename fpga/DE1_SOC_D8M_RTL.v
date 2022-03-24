@@ -225,8 +225,6 @@ wire [9:0]  PCK;
 
 wire [15:0] V_CNT, H_CNT;
 
-wire altclkctrl_audio_clk;
-
 //=======================================================
 // Structural coding
 //=======================================================
@@ -446,8 +444,6 @@ CLOCKMEM  ck3 ( .CLK(MIPI_PIXEL_CLK_),  .CLK_FREQ(25000000), 	.CK_1HZ (D8M_CK_HZ
 
 assign LEDR = { D8M_CK_HZ, D8M_CK_HZ2, D8M_CK_HZ3, 5'h0, CAMERA_MIPI_RELAESE, MIPI_BRIDGE_RELEASE };
 
-altclkctrl_audio acca( .inclk(CLOCK3_50), .outclk(altclkctrl_audio_clk) );
-
 Computer_System The_System (
 	////////////////////////////////////
 	// FPGA Side
@@ -462,7 +458,7 @@ Computer_System The_System (
 	.av_config_SDAT							(FPGA_I2C_SDAT),
 
 	// Audio Subsystem
-	.audio_pll_ref_clk_clk					(altclkctrl_audio_clk),
+	.audio_pll_ref_clk_clk					(CLOCK4_50),
 	.audio_pll_ref_reset_reset				(1'b0),
 	.audio_pll_clk_clk						(AUD_XCK),
 	.audio_ADCDAT							(AUD_ADCDAT),
