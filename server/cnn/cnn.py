@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import math
-import dlib
 import torch.nn.functional as F
 from torchvision import transforms
 from PIL import Image
@@ -9,9 +8,14 @@ import sys
 from io import BytesIO
 import numpy as np
 import base64
+import pathlib
 
 
 def model_static(pretrained=False, **kwargs):
+    """
+    Sourced from: https://github.com/rehg-lab/eye-contact-cnn
+    Original Paper: https://osf.io/5a6m7/
+    """
     model = ResNet([3, 4, 6, 3], **kwargs)
     if pretrained:
         model_dict = model.state_dict()
@@ -23,6 +27,10 @@ def model_static(pretrained=False, **kwargs):
 
 
 class ResNet(nn.Module):
+    """
+    Sourced from: https://github.com/rehg-lab/eye-contact-cnn
+    Original Paper: https://osf.io/5a6m7/
+    """
     def __init__(self, layers):
         super(ResNet, self).__init__()
         self.inplanes = 64
@@ -91,6 +99,10 @@ class ResNet(nn.Module):
 
 
 class Bottleneck(nn.Module):
+    """
+    Sourced from: https://github.com/rehg-lab/eye-contact-cnn
+    Original Paper: https://osf.io/5a6m7/
+    """
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None):
@@ -129,47 +141,35 @@ class Bottleneck(nn.Module):
         return out
 
 
-def run(base64_encoded_jpeg, model, cnn_face_detector, transform):
+def run(base64_encoded_jpeg, model, transform):
+    """
+        Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
+        Original Paper: https://osf.io/5a6m7/
+
+        run() runs the model and prints the score out to the console, but this will be adapted to send the data to an endpoint
+
+        base64_encoded_jpeg: a path to a text file containing a base64 encoded jpeg image
+        model: the eye contact model
+        transform: the Tensor transformation to be applied on input images
+    """
 
     with open(base64_encoded_jpeg, "r") as f:
         data = f.read()
-    im = Image.open(BytesIO(base64.b64decode(data)))
-    frame = np.array(im)
-
-    bbox = []
-
-    dets = cnn_face_detector(frame, 1)
-
-    for d in dets:
-        l = d.rect.left()
-        r = d.rect.right()
-        t = d.rect.top()
-        b = d.rect.bottom()
-        # expand a bit
-        l -= (r-l)*0.2
-        r += (r-l)*0.2
-        t -= (b-t)*0.2
-        b += (b-t)*0.2
-        bbox.append([l, t, r, b])
-
-        frame = Image.fromarray(frame)
-        for b in bbox:
-            face = frame.crop((b))
-            img = transform(face)
-            img.unsqueeze_(0)
-
-            # forward pass
-            output = model(img)
-            score = torch.sigmoid(output).item()
-
+    frame = Image.open(BytesIO(base64.b64decode(data)))
+    img = transform(frame)
+    img.unsqueeze_(0)
+    output = model(img)
+    score = torch.sigmoid(output).item()
     print(score)
 
 
 def init_model():
+    """
+    init_model() initializes the mdoel, loads weights, and the data transformation to be applied to input images
+    """
 
-    # from http://dlib.net/files/mmod_human_face_detector.dat.bz2
-    CNN_FACE_MODEL = 'data/mmod_human_face_detector.dat'
-    model_weight = 'data/model_weights.pkl'
+    cnn_directory = pathlib.Path(__file__).parent
+    model_weight = f"{str(cnn_directory)}/data/model_weights.pkl"
 
     # load model weights
     model = model_static(model_weight)
@@ -179,22 +179,18 @@ def init_model():
     model.load_state_dict(model_dict)
     model.train(False)
 
-    cnn_face_detector = dlib.cnn_face_detection_model_v1(CNN_FACE_MODEL)
-
     # set up data transformation
     transform = transforms.Compose([transforms.Resize(224), transforms.CenterCrop(224), transforms.ToTensor(),
                                     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
-    return model, cnn_face_detector, transform
+    return model, transform
 
 
 if __name__ == "__main__":
-    model, cnn_face_detector, transform = init_model()
+    model, transform = init_model()
 
     if len(sys.argv) != 2:
         raise SyntaxError(
-            "Insufficient arguments. Supply a path to a text file containing a base-64 encoded JPEG")
+            "Insufficient arguments. Supply a path to a text file containing a base-64 encoded JPEG.")
     else:
-        # If there are keyword arguments
-        run(base64_encoded_jpeg=sys.argv[1], model=model,
-            cnn_face_detector=cnn_face_detector, transform=transform)
+        run(base64_encoded_jpeg=sys.argv[1], model=model, transform=transform)
