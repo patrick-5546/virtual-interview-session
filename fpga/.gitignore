@@ -2,7 +2,7 @@
 /db/*
 /incremental_db/*
 /output_files/*
-/.qsys_edit
+/.qsys_edit/*
 /*.csv
 /*.txt
 /*.qws
@@ -16,10 +16,10 @@
 /hps_isw_handoff/*
 
 # Nios II generated folders and files
-.metadata/
-.qsys_edit/
-RemoteSystemsTempFiles/
-software/*/obj/
+.metadata/*
+.qsys_edit/*
+RemoteSystemsTempFiles/*
+software/*/obj/*
 !software/*_bsp/obj/
 software/*/*.elf
 software/*/*.map
