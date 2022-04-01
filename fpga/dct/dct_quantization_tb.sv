@@ -1,16 +1,7 @@
-module dct_tb ();
-    logic clk, reset, start;
-
+module dct_cl_quant_tb;
     logic [7:0][7:0][31:0] dct_out;
     logic [7:0][7:0][31:0] mcu;
-
-    dct DCT(.clk(clk), .reset(reset), .start(start), .mcu(mcu), .dct_out(dct_out));
-
-    initial forever begin
-        clk = 0; #5;
-        clk = 1; #5;
-    end
-
+    
     initial begin
         mcu[0][0] = 32'hff00;
         mcu[0][1] = 32'h0000;
@@ -76,16 +67,11 @@ module dct_tb ();
         mcu[7][5] = 32'h0000;
         mcu[7][6] = 32'hff00;
         mcu[7][7] = 32'h0000;
-        #5;
-        reset = 1'b1;
-        start = 1'b1;
-        #5;
-        reset = 1'b0;
-        #45000;
-        #45000;
-        #45000;
+    end
 
+    dct_cl_quant dut(.mcu(mcu), .dct(dct_out));
+    initial begin
+        #5;
         $stop;
     end
-    
 endmodule
