@@ -23,10 +23,7 @@ output  reg [7:0] oB ,
 output            READY ,
 output            SCL , 
 inout             SDA , 
-output [9:0]      STATUS,
-
-output [15:0] V_CNT,
-output [15:0] H_CNT
+output [9:0]      STATUS 
 
 );
 //=============================================================================
@@ -113,12 +110,20 @@ VCM_I2C i2c2(
 //-----VIDEO MIXED  -- 
 
 always @( negedge VIDEO_CLK ) 
-   if ( (SW_FUC_LINE & (LINE || (V_CNT == 240 && H_CNT == 320)))  ||  (SW_FUC_ALL_CEN  &  (~VCM_END & LINE || (V_CNT == 240 && H_CNT == 320))) ) begin
-      {oR, oG, oB} <= {8'hFF, 8'hFF, 8'h0};
-   end
-   else begin
-      {oR, oG, oB} <= { iR, iG, iB };
-   end
-
+   {oR, oG, oB}  <=    
+   ((SW_FUC_LINE &  LINE )  ||  ( SW_FUC_ALL_CEN  &  ( ~VCM_END  &  LINE) ) )?  {8'hFF, 8'hFF, 8'h0} : 
+   ( !SW_Y )?  //( ACTIV_C ? 24'h555555 :  
+	{ iR, iG, iB }   : 
+   (SW_H_FREQ)?  { 
+     Y[15:8 ],
+     Y[15:8 ],
+     Y[15:8 ]
+   } :
+   {
+	   S[7:0],
+	   S[7:0],
+	   S[7:0]
+	 };
+	 
 endmodule 
 	 

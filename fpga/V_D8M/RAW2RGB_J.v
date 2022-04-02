@@ -9,8 +9,10 @@ input           VGA_VS ,
 input           VGA_HS ,	 
 output	[7:0] oRed,
 output 	[7:0] oGreen,
-output	[7:0] oBlue
+output	[7:0] oBlue,
 
+output  [10:0]  mX_Cont,
+output  [10:0]  mY_Cont
 );
 parameter D8M_VAL_LINE_MAX  = 637; 
 parameter D8M_VAL_LINE_MIN  = 3; 
@@ -21,8 +23,8 @@ wire	   [9:0]	mDAT0_1;
 wire 		[9:0]	mCCD_R;
 wire 		[9:0]	mCCD_G; 
 wire 		[9:0]	mCCD_B;
-wire	[10:0]	mX_Cont;
-wire	[10:0]	mY_Cont;
+// wire	[10:0]	mX_Cont;
+// wire	[10:0]	mY_Cont;
 
 
 //-------- RGB OUT ---- 
