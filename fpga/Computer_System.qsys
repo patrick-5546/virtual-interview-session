@@ -41,6 +41,22 @@
          type = "String";
       }
    }
+   element Computer_System
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element Computer_System
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
    element Image_Reader
    {
       datum _sortIndex
@@ -111,26 +127,19 @@
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
  <interface name="hps_io" internal="ARM_A9_HPS.hps_io" type="conduit" dir="end" />
+ <interface name="image_reader_color_data" internal="Image_Reader.color_data" />
  <interface
-   name="image_reader_vga_clk"
-   internal="Image_Reader.vga_clk"
+   name="image_reader_indata"
+   internal="Image_Reader.indata"
    type="conduit"
    dir="end" />
- <interface
-   name="image_reader_x_coord"
-   internal="Image_Reader.x_coord"
-   type="conduit"
-   dir="end" />
- <interface
-   name="image_reader_y_channel"
-   internal="Image_Reader.y_channel"
-   type="conduit"
-   dir="end" />
- <interface
-   name="image_reader_y_coord"
-   internal="Image_Reader.y_coord"
-   type="conduit"
-   dir="end" />
+ <interface name="image_reader_ix" internal="Image_Reader.iX" />
+ <interface name="image_reader_iy" internal="Image_Reader.iY" />
+ <interface name="image_reader_iy_channel" internal="Image_Reader.iY_CHANNEL" />
+ <interface name="image_reader_vga_clk" internal="Image_Reader.VGA_CLK" />
+ <interface name="image_reader_x_coord" internal="Image_Reader.x_coord" />
+ <interface name="image_reader_y_channel" internal="Image_Reader.y_channel" />
+ <interface name="image_reader_y_coord" internal="Image_Reader.y_coord" />
  <interface name="memory" internal="ARM_A9_HPS.memory" type="conduit" dir="end" />
  <interface
    name="system_pll_ref_clk"

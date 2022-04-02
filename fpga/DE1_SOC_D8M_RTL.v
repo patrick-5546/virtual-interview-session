@@ -357,7 +357,6 @@ module DE1_SOC_D8M_RTL(
     );
 
     //------RGB to YCbCr conversion (we only need Y) --
-    // 32-bit fixed point number: top 24 bits is the integer part, bottom 8 bits is the fractional part
     assign Y_CHANNEL_INT = (16+(((RED<<6) + (RED<<1) + (GREEN<<7) + GREEN + (BLUE<<4) + (BLUE<<3) + BLUE)>>8));
 
     //------Draw bounding box to VGA when SW[0] is down --
@@ -470,10 +469,7 @@ module DE1_SOC_D8M_RTL(
         .system_pll_ref_reset_reset			(1'b0),
 
         // Image Reader Qsys Component
-        .image_reader_vga_clk_chipselect                (VGA_CLK),
-        .image_reader_y_channel_writebyteenable_n       (Y_CHANNEL_INT),
-        .image_reader_x_coord_writebyteenable_n         (X),
-        .image_reader_y_coord_writebyteenable_n         (Y),
+        .image_reader_indata_indata_export      ( {VGA_CLK, Y_CHANNEL_INT, X, Y} ),
 
         ////////////////////////////////////
         // HPS Side
