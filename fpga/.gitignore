@@ -13,6 +13,7 @@
 
 # Platform Designer output folders
 /Computer_System/*
+/hps_isw_handoff/*
 
 # Nios II generated folders and files
 .metadata/*
