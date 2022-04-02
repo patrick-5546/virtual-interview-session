@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 function LoginForm({ Login, error }) {
-    const [details, setDetails] = useState({firstname: "", lastname: "",email: "", password: ""});
+    const [details, setDetails] = useState({firstname: "", lastname: "",email: "cpen@admin.com", password: "cpen123"});
     
     const submitHandler = e => {
         e.preventDefault();
@@ -13,7 +13,7 @@ function LoginForm({ Login, error }) {
         <form onSubmit={submitHandler}> 
             <div className="form-inner">
                 <h2>Login</h2>
-                {(error != "") ? ( <div className="error">{error}</div>) : ""}
+                {(error !== "") ? ( <div className="error">{error}</div>) : ""}
                 <div className="form-group">
                     <label htmlFor="firstname">First Name:</label>
                     <input type="text" name="firstname" id="firstname" onChange={e => setDetails({...details, firstname: e.target.value })} value={details.firstname}/>

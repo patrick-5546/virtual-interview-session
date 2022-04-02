@@ -102,7 +102,8 @@ form .form-inner input[type="submit"]:hover, .welcome button:hover {
 
 .welcome {
     width: 100%;
-    max-width: 480px;
+    height: 100%;
+    /* max-width: 480px; */
     background-color: #FFF;
     padding: 15px 30px;
 }
