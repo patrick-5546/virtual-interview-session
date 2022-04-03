@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -70,9 +71,24 @@ int main(void)
    // Set virtual address pointer to I/O port
    IMAGE_READER_ptr = (unsigned int *) (LW_virtual + IMAGE_READER_BASE);
 
-   *IMAGE_READER_ptr = 9; // write the value to component
-   printf("saved_value is now %x\n", *(IMAGE_READER_ptr+1));
-   printf("y_channel is now %x\n", *(IMAGE_READER_ptr));
+   // Create array to store pixels
+   int img[50176];  // 224x224
+   int* img_ptr = img;
+
+   int strip_num, block_num, addr;
+   while (1) {
+      for (strip_num = 0; strip_num < 28; ++strip_num) {
+         for (block_num = 0; block_num < 28; ++block_num) {
+            *IMAGE_READER_ptr = (strip_num << 16) & block_num;
+
+            for (addr = 0; addr < 1; ++addr)
+               memcpy(img_ptr + strip*224 + block_num, (const void *)(IMAGE_READER_ptr + addr), 1024);
+         }
+      }
+
+      printf("Sleeping for 2 seconds\n\n");
+      sleep(2);
+   }
 
    unmap_physical (LW_virtual, LW_BRIDGE_SPAN);   // release the physical-memory mapping
    close_physical (fd);   // close /dev/mem
