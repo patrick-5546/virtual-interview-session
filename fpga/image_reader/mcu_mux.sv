@@ -1,4 +1,4 @@
-module mcu_construction_mux(input logic[10:0] sel, input logic [7:0][7:0][31:0] mcu0, mcu1, mcu2, mcu3, mcu4, mcu5, mcu6, mcu7, mcu8, mcu9, mcu10, mcu11, mcu12, mcu13, mcu14, mcu15, mcu16, mcu17, mcu18, mcu19, mcu20, mcu21, mcu22, mcu23, mcu24, mcu25, mcu26, mcu27, output logic [7:0][7:0][31:0] mcu_out); 
+module mcu_mux(input logic[10:0] sel, input logic [7:0][7:0][31:0] mcu0, mcu1, mcu2, mcu3, mcu4, mcu5, mcu6, mcu7, mcu8, mcu9, mcu10, mcu11, mcu12, mcu13, mcu14, mcu15, mcu16, mcu17, mcu18, mcu19, mcu20, mcu21, mcu22, mcu23, mcu24, mcu25, mcu26, mcu27, output logic [7:0][7:0][31:0] mcu_out); 
     always_comb begin
         case(sel)
             0: mcu_out = mcu0;
