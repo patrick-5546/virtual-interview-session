@@ -1,5 +1,7 @@
 ''' Calls the read_image() function compiled in an so file then
     - Posts img as a JSON object to SERVER_ENDPOINT
+
+Reference: https://medium.com/spikelab/calling-c-functions-from-python-104e609f2804
 '''
 from ctypes import c_int, cdll
 import json

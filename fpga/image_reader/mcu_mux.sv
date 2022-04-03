@@ -29,7 +29,7 @@ module mcu_construction_mux(input logic[10:0] sel, input logic [7:0][7:0][31:0] 
             25: mcu_out = mcu25;
             26: mcu_out = mcu26;
             27: mcu_out = mcu27;
-            default: 1'bx;
+            default: mcu_out = 1'bx;
         endcase
     end
 
