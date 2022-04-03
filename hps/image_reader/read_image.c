@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -55,42 +56,51 @@ int unmap_physical(void * virtual_base, unsigned int span)
    return 0;
 }
 
-int main(void)
+// to compile for the python wrapper, run:
+// cc -fPIC -shared -o test.so read_image.c
+int * read_image(void)
 {
-   volatile int * IMAGE_READER_ptr;   // virtual address pointer to red LEDs
+   int * img = (int *)malloc(sizeof(int) * 50176);  // Allocate space to store image
 
+   volatile int * IMAGE_READER_ptr;   // virtual address pointer to image_reader qsys component
    int fd = -1;               // used to open /dev/mem for access to physical addresses
    void *LW_virtual;          // used to map physical addresses for the light-weight bridge
 
    // Create virtual memory access to the FPGA light-weight bridge
    if ((fd = open_physical (fd)) == -1)
-      return (-1);
+      return img;
    if ((LW_virtual = map_physical (fd, LW_BRIDGE_BASE, LW_BRIDGE_SPAN)) == NULL)
-      return (-1);
+      return img;
 
    // Set virtual address pointer to I/O port
    IMAGE_READER_ptr = (unsigned int *) (LW_virtual + IMAGE_READER_BASE);
 
-   // Create array to store pixels
-   int img[50176];  // 224x224
-   int* img_ptr = img;
+   // save an arbitrary value
+   *IMAGE_READER_ptr = 21;
+   int i;
+   for (i = 0; i < 50176; i += 2)
+      memcpy(img + i, (const void *)IMAGE_READER_ptr, 8);
 
-   int strip_num, block_num, addr;
-   while (1) {
-      for (strip_num = 0; strip_num < 28; ++strip_num) {
-         for (block_num = 0; block_num < 28; ++block_num) {
-            *IMAGE_READER_ptr = (strip_num << 16) & block_num;
+   // int strip_num, block_num, addr;
+   // for (strip_num = 0; strip_num < 28; ++strip_num) {
+   //    for (block_num = 0; block_num < 28; ++block_num) {
+   //       *IMAGE_READER_ptr = (strip_num << 16) & block_num;
 
-            for (addr = 0; addr < 1; ++addr)
-               memcpy(img_ptr + strip*224 + block_num, (const void *)(IMAGE_READER_ptr + addr), 1024);
-         }
-      }
-
-      printf("Sleeping for 2 seconds\n\n");
-      sleep(2);
-   }
+   //       for (addr = 0; addr < 1; ++addr)
+   //          memcpy(img_ptr + strip*224 + block_num, (const void *)(IMAGE_READER_ptr + addr), 1024);
+   //    }
+   // }
 
    unmap_physical (LW_virtual, LW_BRIDGE_SPAN);   // release the physical-memory mapping
    close_physical (fd);   // close /dev/mem
+
+   return img;
+}
+
+int main() {
+   int * img = read_image();
+   printf("saved_value is now %x\n", img[1]);
+   printf("y_channel is now %x\n", img[0]);
+
    return 0;
 }
