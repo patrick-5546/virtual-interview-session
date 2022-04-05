@@ -57,6 +57,14 @@
          type = "String";
       }
    }
+   element Computer_System
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
    element Image_Reader
    {
       datum _sortIndex
@@ -739,7 +747,7 @@
    start="ARM_A9_HPS.h2f_lw_axi_master"
    end="Image_Reader.avalon_slave_0">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x2050" />
+  <parameter name="baseAddress" value="0x2000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -748,7 +756,7 @@
    start="ARM_A9_HPS.h2f_lw_axi_master"
    end="SysID.control_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x2040" />
+  <parameter name="baseAddress" value="0x1000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -757,7 +765,7 @@
    start="JTAG_to_FPGA_Bridge.master"
    end="Image_Reader.avalon_slave_0">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0xff202050" />
+  <parameter name="baseAddress" value="0xff202000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -766,7 +774,7 @@
    start="JTAG_to_FPGA_Bridge.master"
    end="SysID.control_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0xff202040" />
+  <parameter name="baseAddress" value="0xff201000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection

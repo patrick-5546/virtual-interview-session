@@ -74,8 +74,7 @@ module image_reader (
     logic [7:0][7:0][31:0] mcu27;
 
     logic [7:0][7:0][31:0] current_mcu;
-    logic [10:0] mcu_construction_sel = ((X - 208) / 8);
-    mcu_mux mcu_construction_mux(.sel(mcu_construction_sel),
+    mcu_mux mcu_construction_mux(.sel((X - 208) / 8),
                                  .mcu0(mcu0),
                                  .mcu1(mcu1),
                                  .mcu2(mcu2),
@@ -138,8 +137,7 @@ module image_reader (
     end   
 
     logic [7:0][7:0][31:0] dct_input;
-    logic [7:0] dct_mcu_select = saved_value[7:0];
-    mcu_mux dct_input_selector(.sel(dct_mcu_select),
+    mcu_mux dct_input_selector(.sel({3'b0, saved_value[7:0]}),
                                .mcu0(mcu0),
                                .mcu1(mcu1),
                                .mcu2(mcu2),
@@ -172,7 +170,7 @@ module image_reader (
                                );
     
     logic [7:0][7:0][31:0] dct_out;
-    dct_quantization dct(.mcu_in(dct_input), .dct_out(dct_out));
+    dct_quantization dct(.mcu(dct_input), .dct(dct_out));
 
     // logic [2047:0] flattened_dct_out;
 
