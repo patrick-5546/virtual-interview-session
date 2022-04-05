@@ -11,40 +11,6 @@ import Interview from "../routes/Interview";
 import Questions from "../routes/Questions";
 
 function Home({ user, Logout, updateMetricsProps }) {
-  /*
-  const APIUrl = "http://34.222.245.107:5000/api";
-  const [question, setQuestion] = useState("");
-  var data = {
-    question: question
-  }
-  useEffect(() => {
-    axios
-      .get(`${APIUrl}/c`)
-      .then(
-        (response) => {
-          setQuestion(response.data[0].q);
-        },
-        (reject) => {
-          console.log(reject);
-        }
-      )
-      .catch((err) => {
-        console.error(err);
-      });
-  }, []);
-  
-  
-
-  if(question.error) {
-    content = <p> There was an error </p>
-  }
-
-  if(question.data) {
-    content  = <div>
-      <h1>No question</h1>
-    </div>
-  }
-  */
 
   //Timer//
   const [time, setTime] = useState({ms:0, s:0, m:0});
@@ -141,6 +107,14 @@ function Home({ user, Logout, updateMetricsProps }) {
           .then(
             (response) => {
               setEyecontact(response.data.feedback);
+              axios
+              .get(`${APIUrl}/feedback2`)
+              .then(
+                (response) => {
+                  setSentimentscore(response.data.feedback);
+                  updateMetricsProps(data);
+                }
+              )
             },
             (reject) => {
               console.log(reject);
@@ -149,23 +123,6 @@ function Home({ user, Logout, updateMetricsProps }) {
           .catch((err) => {
             console.error(err);
           });
-        
-          axios
-          .get(`${APIUrl}/feedback2`)
-          .then(
-            (response) => {
-              setSentimentscore(response.data.feedback)
-              updateMetricsProps(data)
-            },
-            (reject) => {
-              console.log(reject);
-            }
-          )
-          .catch((err) => {
-            console.log(err);
-          });
-          
-          console.log(data)
         }
   
   return (
