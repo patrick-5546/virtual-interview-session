@@ -363,17 +363,12 @@ module DE1_SOC_D8M_RTL(
     wire bounding_box = ((Y == 127 || Y == 352) && (207 <= X && X <= 432)) || ((X == 207 || X == 432) && (127 <= Y && Y <= 352));
     wire border =       ((Y == 129 || Y == 350) && (209 <= X && X <= 430)) || ((X == 209 || X == 430) && (129 <= Y && Y <= 350));
     wire block = (208 <= X && X <= 215) && (128 <= Y && Y <= 135);
-    //------Draw bounding box to VGA when SW[0] is down --
-    always @( SW[0] or X or Y or RED or GREEN or BLUE ) begin
+    //------Draw bounding box to VGA when SW[0] is down, test pixels when SW[0] is up --
+    always @( SW[0] or bounding_box or border or block or RED or GREEN or BLUE ) begin
         if ( ~SW[0] ) begin
             if ( bounding_box ) begin
                 BOUND_RED = 8'h00;
                 BOUND_GREEN = 8'hFF;
-                BOUND_BLUE = 8'hFF;
-            end
-            else if ( border || block ) begin
-                BOUND_RED = 8'hFF;
-                BOUND_GREEN = 8'h00;
                 BOUND_BLUE = 8'hFF;
             end
             else begin
@@ -383,9 +378,16 @@ module DE1_SOC_D8M_RTL(
             end
         end
         else begin
-            BOUND_RED = RED;
-            BOUND_GREEN = GREEN;
-            BOUND_BLUE = BLUE;
+            if ( border || block ) begin
+                BOUND_RED = 8'hFF;
+                BOUND_GREEN = 8'h00;
+                BOUND_BLUE = 8'hFF;
+            end
+            else begin
+                BOUND_RED = RED;
+                BOUND_GREEN = GREEN;
+                BOUND_BLUE = BLUE;
+            end
         end
     end
 

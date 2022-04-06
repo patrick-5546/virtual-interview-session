@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -59,16 +60,16 @@ int unmap_physical(void * virtual_base, unsigned int span)
 }
 
 struct pixel {
-   unsigned int y_channel;
-   unsigned int upperLeftY;
-   unsigned int upperLeftX;
-   unsigned int blockUpperLeft;
-   unsigned int desiredY;
-   unsigned int desiredX;
-   unsigned int block_ind;
-   unsigned int pixel_in_bounding_box;
-   unsigned int desired_pixel_in_bounding_box;
-   unsigned int desired_pixel;
+   int y_channel;
+   int upperLeftY;
+   int upperLeftX;
+   int blockUpperLeft;
+   int desiredY;
+   int desiredX;
+   int block_ind;
+   int pixel_in_bounding_box;
+   int desired_pixel_in_bounding_box;
+   int desired_pixel;
 };
 
 struct pixel update_pixel(struct pixel p, volatile int *IMAGE_READER_ptr)
@@ -98,10 +99,10 @@ struct pixel update_pixel(struct pixel p, volatile int *IMAGE_READER_ptr)
  */
 void debug_pixel(struct pixel p)
 {
-   printf("Values for pixel %u (%u, %u):\n", p.desired_pixel, p.desiredX, p.desiredY);
-   printf("\tBlock upper left %u (%u, %u)\n", p.blockUpperLeft, p.upperLeftX, p.upperLeftY);
-   printf("\tBlock index %u\n", p.block_ind);
-   printf("\tdpibb %u, pibb %u\n", p.desired_pixel_in_bounding_box, p.pixel_in_bounding_box);
+   printf("Values for pixel %d (%d, %d):\n", p.desired_pixel, p.desiredX, p.desiredY);
+   printf("\tBlock upper left %d (%d, %d)\n", p.blockUpperLeft, p.upperLeftX, p.upperLeftY);
+   printf("\tBlock index %d\n", p.block_ind);
+   printf("\tdpibb %d, pibb %d\n", p.desired_pixel_in_bounding_box, p.pixel_in_bounding_box);
    printf("\tY channel %x\n", p.y_channel);
 }
 
@@ -110,14 +111,28 @@ void debug_pixel(struct pixel p)
  */
 void printp(struct pixel p)
 {
-   printf("Pixel %u (%u, %u) has a y channel of %u\n", p.desired_pixel, p.desiredX, p.desiredY, p.y_channel);
+   printf("Pixel %d (%d, %d) has a y channel of %x\n", p.desired_pixel, p.desiredX, p.desiredY, p.y_channel);
 }
 
 /*
  * Test the functionality of the image reader component
  */
-void test(volatile int *IMAGE_READER_ptr)
+void test(void)
 {
+   volatile int * IMAGE_READER_ptr;   // virtual address pointer to red LEDs
+
+   int fd = -1;               // used to open /dev/mem for access to physical addresses
+   void *LW_virtual;          // used to map physical addresses for the light-weight bridge
+
+   // Create virtual memory access to the FPGA light-weight bridge
+   if ((fd = open_physical (fd)) == -1)
+      return;
+   if ((LW_virtual = map_physical (fd, LW_BRIDGE_BASE, LW_BRIDGE_SPAN)) == NULL)
+      return;
+
+   // Set virtual address pointer to I/O port
+   IMAGE_READER_ptr = (unsigned int *) (LW_virtual + IMAGE_READER_BASE);
+
    int i, starting_pixel, desired_pixel, out_of_bounds_pixel;
    struct pixel p;
 
@@ -168,30 +183,59 @@ void test(volatile int *IMAGE_READER_ptr)
       p = update_pixel(p, IMAGE_READER_ptr);
       printp(p);
    }
-}
-
-int main(void)
-{
-   volatile int * IMAGE_READER_ptr;   // virtual address pointer to red LEDs
-
-   int fd = -1;               // used to open /dev/mem for access to physical addresses
-   void *LW_virtual;          // used to map physical addresses for the light-weight bridge
-
-   // Create virtual memory access to the FPGA light-weight bridge
-   if ((fd = open_physical (fd)) == -1)
-      return (-1);
-   if ((LW_virtual = map_physical (fd, LW_BRIDGE_BASE, LW_BRIDGE_SPAN)) == NULL)
-      return (-1);
-
-   // Set virtual address pointer to I/O port
-   IMAGE_READER_ptr = (unsigned int *) (LW_virtual + IMAGE_READER_BASE);
-
-   test(IMAGE_READER_ptr);
 
    printf("\nWriting out of bounds pixel to resume updating pixel values\n");
    *IMAGE_READER_ptr = 224*224;
 
    unmap_physical (LW_virtual, LW_BRIDGE_SPAN);   // release the physical-memory mapping
    close_physical (fd);   // close /dev/mem
+}
+
+// to compile for the python wrapper image_reader.py, run:
+// cc -fPIC -shared -o test.so read_image.c
+int * read_image(void)
+{
+   int * img = (int *)malloc(sizeof(int) * 50176);  // Allocate space to store image
+
+   volatile int * IMAGE_READER_ptr;   // virtual address pointer to image_reader qsys component
+   int fd = -1;               // used to open /dev/mem for access to physical addresses
+   void *LW_virtual;          // used to map physical addresses for the light-weight bridge
+
+   // Create virtual memory access to the FPGA light-weight bridge
+   if ((fd = open_physical (fd)) == -1)
+      return img;
+   if ((LW_virtual = map_physical (fd, LW_BRIDGE_BASE, LW_BRIDGE_SPAN)) == NULL)
+      return img;
+
+   // Set virtual address pointer to I/O port
+   IMAGE_READER_ptr = (unsigned int *) (LW_virtual + IMAGE_READER_BASE);
+
+   // save an arbitrary value
+   int i;
+   for (i = 0; i < 50176; ++i) {
+      *IMAGE_READER_ptr = i; // write the desired pixel to component
+      img[i] = *IMAGE_READER_ptr;
+   }
+
+   // Writing out of bounds pixel to resume updating pixel values
+   *IMAGE_READER_ptr = 224*224;
+
+   unmap_physical (LW_virtual, LW_BRIDGE_SPAN);   // release the physical-memory mapping
+   close_physical (fd);   // close /dev/mem
+
+   return img;
+}
+
+int main(void)
+{
+   test();
+
+   printf("Printing the Y channel of the first 10 pixels\n");
+   int * img = read_image();
+   int i;
+   for (i = 0; i < 10; ++i) {
+      printf("\tPixel %d: %x\n", i, img[i]);
+   }
+
    return 0;
 }
