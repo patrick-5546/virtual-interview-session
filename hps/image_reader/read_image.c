@@ -61,6 +61,7 @@ int unmap_physical(void * virtual_base, unsigned int span)
 
 struct pixel {
    int y_channel;
+   int dct;
    int upperLeftY;
    int upperLeftX;
    int blockUpperLeft;
@@ -77,7 +78,8 @@ struct pixel update_pixel(struct pixel p, volatile int *IMAGE_READER_ptr)
    int values[4];
    memcpy(values, (const void *)IMAGE_READER_ptr, sizeof(int) * 4);
 
-   p.y_channel = values[0];
+   p.y_channel = values[0] & 0xFF;
+   p.dct = (values[0] >> 16) & 0xFFFF;
 
    p.upperLeftY = values[1] & 0xFF;
    p.upperLeftX = (values[1] >> 8) & 0xFF;
@@ -104,6 +106,7 @@ void debug_pixel(struct pixel p)
    printf("\tBlock index %d\n", p.block_ind);
    printf("\tdpibb %d, pibb %d\n", p.desired_pixel_in_bounding_box, p.pixel_in_bounding_box);
    printf("\tY channel %x\n", p.y_channel);
+   printf("\tDCT %x\n", p.dct);
 }
 
 /*
@@ -111,7 +114,7 @@ void debug_pixel(struct pixel p)
  */
 void printp(struct pixel p)
 {
-   printf("Pixel %d (%d, %d) has a y channel of %x\n", p.desired_pixel, p.desiredX, p.desiredY, p.y_channel);
+   printf("Pixel %d (%d, %d) has y channel=%x, dct=%x\n", p.desired_pixel, p.desiredX, p.desiredY, p.y_channel, p.dct);
 }
 
 /*
@@ -214,7 +217,7 @@ int * read_image(void)
    int i;
    for (i = 0; i < 50176; ++i) {
       *IMAGE_READER_ptr = i; // write the desired pixel to component
-      img[i] = *IMAGE_READER_ptr;
+      img[i] = *IMAGE_READER_ptr & 0xFF;
    }
 
    // Writing out of bounds pixel to resume updating pixel values

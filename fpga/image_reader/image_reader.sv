@@ -33,8 +33,8 @@ module image_reader (
 
     logic [31:0] block_ind;
 
-    // logic [511:0] dct_in;
-    // logic [1023:0] dct_out;
+    logic [511:0] dct_in;
+    logic [1023:0] dct_out;
 
 
     //=============================================================================
@@ -50,7 +50,7 @@ module image_reader (
         - Bottom right coordinates of capture field: (431, 351)
     */
     assign desired_pixel_in_bounding_box = 0 <= desired_pixel && desired_pixel <= 50175;
-    assign pixel_in_bounding_box = (208 <= X) && (X <= 431) && (128 <= Y) && (Y <= 351);
+    assign pixel_in_bounding_box = (208 <= X && X <= 431) && (128 <= Y && Y <= 351);
 
     always_ff @(posedge clk)
         if(!desired_pixel_in_bounding_box && pixel_in_bounding_box)
@@ -64,17 +64,17 @@ module image_reader (
 
     assign block_ind = (((desiredY - blockUpperLeftY) << 3) + desiredX - blockUpperLeftX) << 4;
 
-    // always_comb
-    //     dct_in = {
-    //         img[blockUpperLeft + 224*7 + 7], img[blockUpperLeft + 224*7 + 6], img[blockUpperLeft + 224*7 + 5], img[blockUpperLeft + 224*7 + 4], img[blockUpperLeft + 224*7 + 3], img[blockUpperLeft + 224*7 + 2], img[blockUpperLeft + 224*7 + 1], img[blockUpperLeft + 224*7 + 0],
-    //         img[blockUpperLeft + 224*6 + 7], img[blockUpperLeft + 224*6 + 6], img[blockUpperLeft + 224*6 + 5], img[blockUpperLeft + 224*6 + 4], img[blockUpperLeft + 224*6 + 3], img[blockUpperLeft + 224*6 + 2], img[blockUpperLeft + 224*6 + 1], img[blockUpperLeft + 224*6 + 0],
-    //         img[blockUpperLeft + 224*5 + 7], img[blockUpperLeft + 224*5 + 6], img[blockUpperLeft + 224*5 + 5], img[blockUpperLeft + 224*5 + 4], img[blockUpperLeft + 224*5 + 3], img[blockUpperLeft + 224*5 + 2], img[blockUpperLeft + 224*5 + 1], img[blockUpperLeft + 224*5 + 0],
-    //         img[blockUpperLeft + 224*4 + 7], img[blockUpperLeft + 224*4 + 6], img[blockUpperLeft + 224*4 + 5], img[blockUpperLeft + 224*4 + 4], img[blockUpperLeft + 224*4 + 3], img[blockUpperLeft + 224*4 + 2], img[blockUpperLeft + 224*4 + 1], img[blockUpperLeft + 224*4 + 0],
-    //         img[blockUpperLeft + 224*3 + 7], img[blockUpperLeft + 224*3 + 6], img[blockUpperLeft + 224*3 + 5], img[blockUpperLeft + 224*3 + 4], img[blockUpperLeft + 224*3 + 3], img[blockUpperLeft + 224*3 + 2], img[blockUpperLeft + 224*3 + 1], img[blockUpperLeft + 224*3 + 0],
-    //         img[blockUpperLeft + 224*2 + 7], img[blockUpperLeft + 224*2 + 6], img[blockUpperLeft + 224*2 + 5], img[blockUpperLeft + 224*2 + 4], img[blockUpperLeft + 224*2 + 3], img[blockUpperLeft + 224*2 + 2], img[blockUpperLeft + 224*2 + 1], img[blockUpperLeft + 224*2 + 0],
-    //         img[blockUpperLeft + 224*1 + 7], img[blockUpperLeft + 224*1 + 6], img[blockUpperLeft + 224*1 + 5], img[blockUpperLeft + 224*1 + 4], img[blockUpperLeft + 224*1 + 3], img[blockUpperLeft + 224*1 + 2], img[blockUpperLeft + 224*1 + 1], img[blockUpperLeft + 224*1 + 0],
-    //         img[blockUpperLeft + 224*0 + 7], img[blockUpperLeft + 224*0 + 6], img[blockUpperLeft + 224*0 + 5], img[blockUpperLeft + 224*0 + 4], img[blockUpperLeft + 224*0 + 3], img[blockUpperLeft + 224*0 + 2], img[blockUpperLeft + 224*0 + 1], img[blockUpperLeft + 224*0 + 0]
-    //     };
+    always_comb
+        dct_in = {
+            img[blockUpperLeft + 224*7 + 7], img[blockUpperLeft + 224*7 + 6], img[blockUpperLeft + 224*7 + 5], img[blockUpperLeft + 224*7 + 4], img[blockUpperLeft + 224*7 + 3], img[blockUpperLeft + 224*7 + 2], img[blockUpperLeft + 224*7 + 1], img[blockUpperLeft + 224*7 + 0],
+            img[blockUpperLeft + 224*6 + 7], img[blockUpperLeft + 224*6 + 6], img[blockUpperLeft + 224*6 + 5], img[blockUpperLeft + 224*6 + 4], img[blockUpperLeft + 224*6 + 3], img[blockUpperLeft + 224*6 + 2], img[blockUpperLeft + 224*6 + 1], img[blockUpperLeft + 224*6 + 0],
+            img[blockUpperLeft + 224*5 + 7], img[blockUpperLeft + 224*5 + 6], img[blockUpperLeft + 224*5 + 5], img[blockUpperLeft + 224*5 + 4], img[blockUpperLeft + 224*5 + 3], img[blockUpperLeft + 224*5 + 2], img[blockUpperLeft + 224*5 + 1], img[blockUpperLeft + 224*5 + 0],
+            img[blockUpperLeft + 224*4 + 7], img[blockUpperLeft + 224*4 + 6], img[blockUpperLeft + 224*4 + 5], img[blockUpperLeft + 224*4 + 4], img[blockUpperLeft + 224*4 + 3], img[blockUpperLeft + 224*4 + 2], img[blockUpperLeft + 224*4 + 1], img[blockUpperLeft + 224*4 + 0],
+            img[blockUpperLeft + 224*3 + 7], img[blockUpperLeft + 224*3 + 6], img[blockUpperLeft + 224*3 + 5], img[blockUpperLeft + 224*3 + 4], img[blockUpperLeft + 224*3 + 3], img[blockUpperLeft + 224*3 + 2], img[blockUpperLeft + 224*3 + 1], img[blockUpperLeft + 224*3 + 0],
+            img[blockUpperLeft + 224*2 + 7], img[blockUpperLeft + 224*2 + 6], img[blockUpperLeft + 224*2 + 5], img[blockUpperLeft + 224*2 + 4], img[blockUpperLeft + 224*2 + 3], img[blockUpperLeft + 224*2 + 2], img[blockUpperLeft + 224*2 + 1], img[blockUpperLeft + 224*2 + 0],
+            img[blockUpperLeft + 224*1 + 7], img[blockUpperLeft + 224*1 + 6], img[blockUpperLeft + 224*1 + 5], img[blockUpperLeft + 224*1 + 4], img[blockUpperLeft + 224*1 + 3], img[blockUpperLeft + 224*1 + 2], img[blockUpperLeft + 224*1 + 1], img[blockUpperLeft + 224*1 + 0],
+            img[blockUpperLeft + 224*0 + 7], img[blockUpperLeft + 224*0 + 6], img[blockUpperLeft + 224*0 + 5], img[blockUpperLeft + 224*0 + 4], img[blockUpperLeft + 224*0 + 3], img[blockUpperLeft + 224*0 + 2], img[blockUpperLeft + 224*0 + 1], img[blockUpperLeft + 224*0 + 0]
+        };
 
 
     //=============================================================================
@@ -89,7 +89,7 @@ module image_reader (
         .outdata        ( SLOW2FAST_OUTDATA )
     );
 
-    // dct_quantization dct(.mcu(dct_in), .dct(dct_out));
+    dct_quantization dct(.mcu(dct_in), .dct(dct_out));
 
 
     //=============================================================================
@@ -99,7 +99,7 @@ module image_reader (
     // writing
     always_ff @(posedge clk) begin
         if (reset_n == 0) // synchronous reset
-            desired_pixel <= 32'b0; // clear result on reset
+            desired_pixel <= 32'd50176; // write value outside bounds to start registering values into img
         else if (wr_en == 1)
             desired_pixel <= writedata; // store result
     end
@@ -110,10 +110,8 @@ module image_reader (
         readdata <= 32'b0; // default value is 0
         if (rd_en == 1)
             if ( addr == 2'd0 )
-                // readdata <= {16'd0, dct_out[block_ind+15:block_ind]};
-                readdata <= {24'd0, img[desired_pixel]};
+                readdata <= {dct_out[block_ind +: 16], 8'd0, img[desired_pixel]};
             else if ( addr == 2'd1 )
-                // readdata <= {24'd0, img[desired_pixel]};
                 readdata <= {blockUpperLeft[15:0], blockUpperLeftX[7:0], blockUpperLeftY[7:0]};
             else if ( addr == 2'd2 )
                 readdata <= {6'b0, desired_pixel_in_bounding_box, pixel_in_bounding_box, block_ind[7:0], desiredX[7:0], desiredY[7:0]};
