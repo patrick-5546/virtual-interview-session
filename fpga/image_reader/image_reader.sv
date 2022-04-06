@@ -1,3 +1,5 @@
+`default_nettype none
+
 module image_reader (
     // signals for connecting to the Avalon fabric
     input clk,
@@ -11,7 +13,7 @@ module image_reader (
     // signal for exporting register contents outside of the embedded system
     input logic [30:0] INDATA_export
 );
-    reg unsigned [31:0] saved_value; // temp reg for result
+    reg unsigned [31:0] desired_pixel; // temp reg for result
 
     logic [29:0] SLOW2FAST_OUTDATA;
     logic [7:0] Y_CHANNEL_INT;
@@ -28,43 +30,70 @@ module image_reader (
         .outdata        ( SLOW2FAST_OUTDATA )
     );
 
-    reg unsigned [7:0] img [50176:0]; // 8-bit vector net with a depth of 224 x 224
-    logic [31:0] desiredX, desiredY;
-    assign desiredX = saved_value % 16'd224;
-    assign desiredY = saved_value / 16'd224;
+    reg unsigned [7:0] img [50175:0]; // 8-bit vector net with a depth of 224 x 224
 
     /* Bounding box around the 224x224 capture field centered on the 640x480 screen
         - Top left coordinates of capture field:     (208, 128)
         - Bottom right coordinates of capture field: (431, 351)
     */
     logic pixel_in_bounding_box, desired_pixel_in_bounding_box;
-    assign desired_pixel_in_bounding_box = (0 <= desiredX) && (desiredX <= 223) && (0 <= desiredY) && (desiredY <= 223);
+    assign desired_pixel_in_bounding_box = 0 <= desired_pixel && desired_pixel <= 50175;
     assign pixel_in_bounding_box = (208 <= X) && (X <= 431) && (128 <= Y) && (Y <= 351);
 
     always_ff @(posedge clk)
         if(!desired_pixel_in_bounding_box && pixel_in_bounding_box)
             img[224 * (Y-128) + (X-208)] <= Y_CHANNEL_INT;
 
+    logic [31:0] desiredX, desiredY, upperLeftX, upperLeftY, blockUpperLeft;
+    assign desiredX = desired_pixel % 224;
+    assign desiredY = desired_pixel / 224;
+    assign upperLeftX = (desiredX >> 3) << 3;
+    assign upperLeftY = (desiredY >> 3) << 3;
+    assign blockUpperLeft = desired_pixel_in_bounding_box ? (224 * upperLeftY + upperLeftX) : 0;
+
+    // logic [511:0] dct_in;
+    // logic [1023:0] dct_out;
+    // always_comb
+    //     dct_in = {
+    //         img[blockUpperLeft + 224*7 + 7], img[blockUpperLeft + 224*7 + 6], img[blockUpperLeft + 224*7 + 5], img[blockUpperLeft + 224*7 + 4], img[blockUpperLeft + 224*7 + 3], img[blockUpperLeft + 224*7 + 2], img[blockUpperLeft + 224*7 + 1], img[blockUpperLeft + 224*7 + 0],
+    //         img[blockUpperLeft + 224*6 + 7], img[blockUpperLeft + 224*6 + 6], img[blockUpperLeft + 224*6 + 5], img[blockUpperLeft + 224*6 + 4], img[blockUpperLeft + 224*6 + 3], img[blockUpperLeft + 224*6 + 2], img[blockUpperLeft + 224*6 + 1], img[blockUpperLeft + 224*6 + 0],
+    //         img[blockUpperLeft + 224*5 + 7], img[blockUpperLeft + 224*5 + 6], img[blockUpperLeft + 224*5 + 5], img[blockUpperLeft + 224*5 + 4], img[blockUpperLeft + 224*5 + 3], img[blockUpperLeft + 224*5 + 2], img[blockUpperLeft + 224*5 + 1], img[blockUpperLeft + 224*5 + 0],
+    //         img[blockUpperLeft + 224*4 + 7], img[blockUpperLeft + 224*4 + 6], img[blockUpperLeft + 224*4 + 5], img[blockUpperLeft + 224*4 + 4], img[blockUpperLeft + 224*4 + 3], img[blockUpperLeft + 224*4 + 2], img[blockUpperLeft + 224*4 + 1], img[blockUpperLeft + 224*4 + 0],
+    //         img[blockUpperLeft + 224*3 + 7], img[blockUpperLeft + 224*3 + 6], img[blockUpperLeft + 224*3 + 5], img[blockUpperLeft + 224*3 + 4], img[blockUpperLeft + 224*3 + 3], img[blockUpperLeft + 224*3 + 2], img[blockUpperLeft + 224*3 + 1], img[blockUpperLeft + 224*3 + 0],
+    //         img[blockUpperLeft + 224*2 + 7], img[blockUpperLeft + 224*2 + 6], img[blockUpperLeft + 224*2 + 5], img[blockUpperLeft + 224*2 + 4], img[blockUpperLeft + 224*2 + 3], img[blockUpperLeft + 224*2 + 2], img[blockUpperLeft + 224*2 + 1], img[blockUpperLeft + 224*2 + 0],
+    //         img[blockUpperLeft + 224*1 + 7], img[blockUpperLeft + 224*1 + 6], img[blockUpperLeft + 224*1 + 5], img[blockUpperLeft + 224*1 + 4], img[blockUpperLeft + 224*1 + 3], img[blockUpperLeft + 224*1 + 2], img[blockUpperLeft + 224*1 + 1], img[blockUpperLeft + 224*1 + 0],
+    //         img[blockUpperLeft + 224*0 + 7], img[blockUpperLeft + 224*0 + 6], img[blockUpperLeft + 224*0 + 5], img[blockUpperLeft + 224*0 + 4], img[blockUpperLeft + 224*0 + 3], img[blockUpperLeft + 224*0 + 2], img[blockUpperLeft + 224*0 + 1], img[blockUpperLeft + 224*0 + 0]
+    //     };
+
+    // dct_quantization dct(.mcu(dct_in), .dct(dct_out));
+
     // writing
     always_ff @(posedge clk) begin
         if (reset_n == 0) // synchronous reset
-            saved_value <= 32'b0; // clear result on reset
+            desired_pixel <= 32'b0; // clear result on reset
         else if (wr_en == 1)
-            saved_value <= writedata; // store result
+            desired_pixel <= writedata; // store result
     end
+
+    logic [31:0] block_ind;
+    assign block_ind = (((desiredY - upperLeftY) << 3) + desiredX - upperLeftX) << 4;
 
     // reading
     always @(*) begin
         readdata <= 32'b0; // default value is 0
         if (rd_en == 1)
-            if ( addr == 2'b00 )
-                readdata <= {24'd0, img[saved_value]};
-            else if ( addr == 2'b01 )
-                readdata <= desiredY;
-            else if ( addr == 2'b10 )
-                readdata <= desiredX;
-            else
-                readdata <= saved_value; // what was written
+            if ( addr == 2'd0 )
+                // readdata <= {16'd0, dct_out[block_ind+15:block_ind]};
+                readdata <= {24'd0, img[desired_pixel]};
+            else if ( addr == 2'd1 )
+                // readdata <= {24'd0, img[desired_pixel]};
+                readdata <= {blockUpperLeft[15:0], upperLeftX[7:0], upperLeftY[7:0]};
+            else if ( addr == 2'd2 )
+                readdata <= {6'b0, desired_pixel_in_bounding_box, pixel_in_bounding_box, block_ind[7:0], desiredX[7:0], desiredY[7:0]};
+            else  // addr = 2'd3
+                readdata <= desired_pixel;
     end
 
 endmodule
+
+`default_nettype wire
