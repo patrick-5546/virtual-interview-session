@@ -47,16 +47,7 @@ print('')
 
 # ----- ENCODE DATA BEFORE SENDING TO SERVER -----
 
-# ----- TEST RAW DATA -----
-# nonzero_data = [510, 95, 0, 75, 0, 45, 0, 85]
-# raw_zero_data = [0] * 56
-# single_mcu_output = nonzero_data + raw_zero_data
-
-# dct_as_list = [single_mcu_output] * MCU_TOTAL
-
-# split image into lists of size 64, each containing a 1D array of MCU data
-
-dct_split_by_mcus = np.split(np.array(img), MCU_TOTAL)
+dct_split_by_mcus = np.split(img, MCU_TOTAL)
 
 # reform MCU data into a list of 28^2 MCUs
 dct_mcus = []
@@ -77,6 +68,10 @@ for dct in dct_mcus:
 
 encoded_data = np.array(encoded_data).flatten()
 
+print("first 20 elements of encoded elements")
+print(encoded_data[:20])
+print('')
+
 if POST_TO_SERVER:
     print('Posting img')
     requests.post(SERVER_ENDPOINT, data=json.dumps(
@@ -85,6 +80,6 @@ if POST_TO_SERVER:
 if SAVE_JSON:
     print('Saving json file')
     with open(JSON_FN, 'w') as outfile:
-        json.dump(img, outfile, cls=NumpyArrayEncoder)
+        json.dump(encoded_data, outfile, cls=NumpyArrayEncoder)
 
 print('Exiting program')
