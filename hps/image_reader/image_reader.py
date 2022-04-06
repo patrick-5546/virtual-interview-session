@@ -15,12 +15,24 @@ JSON_FN = 'img.json'
 POST_TO_SERVER = False
 SAVE_JSON = True
 SERVER_ENDPOINT = 'http://34.222.245.107:6000/api/image'
+IMG_WIDTH = 224
+IMG_HEIGHT = 224
+IMG_DIMENSIONS = (IMG_WIDTH, IMG_HEIGHT)
+MCU_HEIGHT = 8
+MCU_WIDTH = 8
+MCU_SIZE = MCU_WIDTH * MCU_HEIGHT
+MCU_DIMENSIONS = (MCU_WIDTH, MCU_HEIGHT)
+MCU_X_COUNT = 28
+MCU_Y_COUNT = 28
+MCU_TOTAL = MCU_X_COUNT * MCU_Y_COUNT
+
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         return JSONEncoder.default(self, obj)
+
 
 # need to add directory that so file is in to environment, for example:
 # export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/root/cpen391/module2/image_reader
@@ -33,9 +45,42 @@ print("first 20 values of img:")
 print(img[:20])
 print('')
 
+# ----- ENCODE DATA BEFORE SENDING TO SERVER -----
+
+# ----- TEST RAW DATA -----
+# nonzero_data = [510, 95, 0, 75, 0, 45, 0, 85]
+# raw_zero_data = [0] * 56
+# single_mcu_output = nonzero_data + raw_zero_data
+
+# dct_as_list = [single_mcu_output] * MCU_TOTAL
+
+# split image into lists of size 64, each containing a 1D array of MCU data
+
+dct_split_by_mcus = np.split(np.array(img), MCU_TOTAL)
+
+# reform MCU data into a list of 28^2 MCUs
+dct_mcus = []
+for mcu in dct_split_by_mcus:
+    current_mcu = np.reshape(mcu, MCU_DIMENSIONS)
+    dct_mcus.append(current_mcu)
+
+dct_mcus = np.array(dct_mcus)
+
+encoded_data = []
+
+for dct in dct_mcus:
+    dct_without_trailing_zeros = np.trim_zeros(filt=dct.flatten(), trim='b')
+    encoded_zeros = np.array(
+        [-1, MCU_SIZE - len(dct_without_trailing_zeros), -1])
+    encoded_dct = np.concatenate((dct_without_trailing_zeros, encoded_zeros))
+    encoded_data.append(encoded_dct)
+
+encoded_data = np.array(encoded_data).flatten()
+
 if POST_TO_SERVER:
     print('Posting img')
-    requests.post(SERVER_ENDPOINT, data=json.dumps(img, cls=NumpyArrayEncoder))
+    requests.post(SERVER_ENDPOINT, data=json.dumps(
+        encoded_data, cls=NumpyArrayEncoder))
 
 if SAVE_JSON:
     print('Saving json file')
