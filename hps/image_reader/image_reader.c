@@ -1,8 +1,12 @@
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include "address_map_arm.h"
+
+#define IMAGE_READER_BASE      0x00000000
+#define LW_BRIDGE_BASE         0xFF200000
+#define LW_BRIDGE_SPAN         0x00005000
 
 // Open /dev/mem, if not already done, to give access to physical addresses
 int open_physical (int fd)
@@ -70,30 +74,41 @@ int main(void)
    // Set virtual address pointer to I/O port
    IMAGE_READER_ptr = (unsigned int *) (LW_virtual + IMAGE_READER_BASE);
 
-   int pixel_num, pixel_val;
-   for (pixel_num = 0; pixel_num < 64; ++pixel_num) {
-      *IMAGE_READER_ptr = pixel_num; // write the desired pixel to component
-      printf("Reading pixel %d\n", *(IMAGE_READER_ptr+3));  // read from nonzero address to see what was written
-      pixel_val = *IMAGE_READER_ptr;
-      printf("\tPixel value:\t%d\n", pixel_val);
-      printf("\tPixel number:\t%d\n", (pixel_val >> 0) & 0xFF);
-      printf("\tX coordinate:\t%d\n", (pixel_val >> 16) & 0xFF);
-      printf("\tY coordinate:\t%d\n", (pixel_val >>  8) & 0xFF);
-      printf("\tY channel:\t%x\n", (pixel_val >>  24) & 0xFF);
-      if ((pixel_val & 0xFF) == 0xA9) {
-         printf("\n\nhere\n\n");
-      }
+   int i;
+   int *num, *x, *y, *val;
+   int pixel[4];
+   num = pixel + 3;
+   x = pixel + 2;
+   y = pixel + 1;
+   val = pixel;
 
-      // printf("Reading pixel %x\n", *(IMAGE_READER_ptr+3));  // read from nonzero address to see what was written
-      // printf("\timg, desiredX, desiredY, saved_value %x\n", *(IMAGE_READER_ptr+0));
-      // printf("\t1,200,30,4 %x\n", *(IMAGE_READER_ptr+1));
-      // printf("\tsaved_value %x\n", *(IMAGE_READER_ptr+2));
+   // first 64 bits of second row
+   for (i = 0; i < 64; ++i) {
+      *IMAGE_READER_ptr = i + 224; // write the desired pixel to component
+      memcpy(pixel, (const void *)IMAGE_READER_ptr, sizeof(int) * 4);
+      printf("Y channel of pixel %d (%d, %d): %x\n", *num, *x, *y, *val);
    }
 
-   // printf("saved_value is now %x\n", *(IMAGE_READER_ptr+65));
-   // printf("y_channel is now %x\n", *(IMAGE_READER_ptr));
-   // printf("y_channel is now %x\n", *(IMAGE_READER_ptr+1));
-   // printf("y_channel is now %x\n", *(IMAGE_READER_ptr));
+   // last 64 bits of second last row
+   for (i = 0; i < 64; ++i) {
+      *IMAGE_READER_ptr = i + 224*223 - 64; // write the desired pixel to component
+      memcpy(pixel, (const void *)IMAGE_READER_ptr, sizeof(int) * 4);
+      printf("Y channel of pixel %d (%d, %d): %x\n", *num, *x, *y, *val);
+   }
+
+   int j;
+   *IMAGE_READER_ptr = 225; // write the desired pixel to component
+   for (j = 0; j < 4; ++j) {
+      memcpy(pixel, (const void *)IMAGE_READER_ptr, sizeof(int) * 4);
+      printf("Y channel of pixel %d (%d, %d): %x\n", *num, *x, *y, *val);
+   }
+   *IMAGE_READER_ptr = 224*224; // write out of bounds pixel to resume the registering of pixels
+   sleep(1);
+   *IMAGE_READER_ptr = 225; // write the desired pixel to component
+   for (j = 0; j < 4; ++j) {
+      memcpy(pixel, (const void *)IMAGE_READER_ptr, sizeof(int) * 4);
+      printf("Y channel of pixel %d (%d, %d): %x\n", *num, *x, *y, *val);
+   }
 
    unmap_physical (LW_virtual, LW_BRIDGE_SPAN);   // release the physical-memory mapping
    close_physical (fd);   // close /dev/mem

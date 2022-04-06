@@ -356,9 +356,13 @@ module DE1_SOC_D8M_RTL(
         .mY_Cont      ( Y )
     );
 
+    /* Bounding box around the 224x224 capture field centered on the 640x480 screen
+        - Top left coordinates of capture field:     (208, 128)
+        - Bottom right coordinates of capture field: (431, 351)
+    */
     //------Draw bounding box to VGA when SW[0] is down --
     always @( SW[0] or X or Y or RED or GREEN or BLUE ) begin
-        if ( ~SW[0] && (((Y == 127 || Y == 352) && (207 <= X && X <= 432)) || ((X == 207 || X == 432) && (127 <= Y && Y <= 352)) || (X == 212 && Y == 132) || (X == 209)) ) begin
+        if ( ~SW[0] && (((Y == 127 || Y == 352) && (207 <= X && X <= 432)) || ((X == 207 || X == 432) && (127 <= Y && Y <= 352)) || (Y == 351) || (Y == 128) || (X == 208) || (X == 431)) ) begin
             BOUND_RED = 8'h00;
             BOUND_GREEN = 8'hFF;
             BOUND_BLUE = 8'hFF;

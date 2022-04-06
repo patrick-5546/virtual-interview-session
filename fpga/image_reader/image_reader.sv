@@ -28,23 +28,22 @@ module image_reader (
         .outdata        ( SLOW2FAST_OUTDATA )
     );
 
+    reg unsigned [7:0] img [50176:0]; // 8-bit vector net with a depth of 224 x 224
+    logic [31:0] desiredX, desiredY;
+    assign desiredX = saved_value % 16'd224;
+    assign desiredY = saved_value / 16'd224;
+
     /* Bounding box around the 224x224 capture field centered on the 640x480 screen
         - Top left coordinates of capture field:     (208, 128)
         - Bottom right coordinates of capture field: (431, 351)
     */
-    reg unsigned [7:0] img [63:0]; // 8-bit vector net with a depth of 8 x 8
-    logic [31:0] desiredX, desiredY;
-    assign desiredX = saved_value % 16'd8;
-    assign desiredY = saved_value / 16'd8;
-
     logic pixel_in_bounding_box, desired_pixel_in_bounding_box;
-    assign desired_pixel_in_bounding_box = (0 <= desiredX) && (desiredX <= 7) && (0 <= desiredY) && (desiredY <= 7);
-    assign pixel_in_bounding_box = (208 <= X) && (X <= 215) && (128 <= Y) && (Y <= 135);
+    assign desired_pixel_in_bounding_box = (0 <= desiredX) && (desiredX <= 223) && (0 <= desiredY) && (desiredY <= 223);
+    assign pixel_in_bounding_box = (208 <= X) && (X <= 431) && (128 <= Y) && (Y <= 351);
 
     always_ff @(posedge clk)
-        // if(!desired_pixel_in_bounding_box && pixel_in_bounding_box)
-        if(pixel_in_bounding_box)
-            img[8 * (Y-128) + (X-208)] <= Y_CHANNEL_INT;
+        if(!desired_pixel_in_bounding_box && pixel_in_bounding_box)
+            img[224 * (Y-128) + (X-208)] <= Y_CHANNEL_INT;
 
     // writing
     always_ff @(posedge clk) begin
@@ -59,14 +58,13 @@ module image_reader (
         readdata <= 32'b0; // default value is 0
         if (rd_en == 1)
             if ( addr == 2'b00 )
-                readdata <= {img[saved_value], desiredX[7:0], desiredY[7:0], saved_value[7:0]};
+                readdata <= {24'd0, img[saved_value]};
             else if ( addr == 2'b01 )
-                readdata <= {8'd1, 8'd200, 8'd30, 8'd4};
+                readdata <= desiredY;
             else if ( addr == 2'b10 )
-                readdata <= {24'd0, saved_value[7:0]};
+                readdata <= desiredX;
             else
                 readdata <= saved_value; // what was written
-
     end
 
 endmodule
