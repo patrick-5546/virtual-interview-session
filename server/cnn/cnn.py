@@ -1,19 +1,19 @@
 import torch
 import torch.nn as nn
 import math
-import torch.nn.functional as F
 from torchvision import transforms
-from PIL import Image
 import sys
-from io import BytesIO
 import numpy as np
-import base64
 import pathlib
+import numpy as np
+import scipy.fft as fft
+from PIL import Image as im
+import ast
 
 
 def model_static(pretrained=False, **kwargs):
     """
-    Sourced from: https://github.com/rehg-lab/eye-contact-cnn
+    Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
     Original Paper: https://osf.io/5a6m7/
     """
     model = ResNet([3, 4, 6, 3], **kwargs)
@@ -28,9 +28,10 @@ def model_static(pretrained=False, **kwargs):
 
 class ResNet(nn.Module):
     """
-    Sourced from: https://github.com/rehg-lab/eye-contact-cnn
+    Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
     Original Paper: https://osf.io/5a6m7/
     """
+
     def __init__(self, layers):
         super(ResNet, self).__init__()
         self.inplanes = 64
@@ -50,6 +51,10 @@ class ResNet(nn.Module):
         self.init_param()
 
     def init_param(self):
+        """
+        Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
+        Original Paper: https://osf.io/5a6m7/
+        """
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -63,6 +68,10 @@ class ResNet(nn.Module):
                 m.bias.data.zero_()
 
     def _make_layer(self, planes, blocks, stride=1):
+        """
+        Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
+        Original Paper: https://osf.io/5a6m7/
+        """
         downsample = None
         layers = []
 
@@ -81,6 +90,10 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        """
+        Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
+        Original Paper: https://osf.io/5a6m7/
+        """
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -100,7 +113,7 @@ class ResNet(nn.Module):
 
 class Bottleneck(nn.Module):
     """
-    Sourced from: https://github.com/rehg-lab/eye-contact-cnn
+    Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
     Original Paper: https://osf.io/5a6m7/
     """
     expansion = 4
@@ -119,6 +132,10 @@ class Bottleneck(nn.Module):
         self.stride = stride
 
     def forward(self, x):
+        """
+        Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
+        Original Paper: https://osf.io/5a6m7/
+        """
         residual = x
 
         out = self.conv1(x)
@@ -141,21 +158,92 @@ class Bottleneck(nn.Module):
         return out
 
 
-def run(base64_encoded_jpeg, model, transform):
+def decode_data(encoded_data, debug=False):
+    """
+    Decode_data takes in encoded data produced by the DE1-SoC, which encodes a grayscale single-channel 224 x 224 photo.
+    This encoded data gets decoded into an RGB image in decode_data().
+
+    Assumes input is a list of numbers, which encodes MCU data using the format [mcu_i data before trailing zeroes, -1, number of trailing zeroes in mcu_i, -1] for i in [0, 28*28]
+    The length of each array [mcu_i data before trailing zeroes, -1, number of trailing zeroes in mcu_i, -1] is 64, the size of an 8x8 MCU
+
+    Returns a PIL RGB Image. 
+
+    Note: debug flag controls whether image is shown. 
+    """
+    encoded_data = ast.literal_eval(encoded_data)
+    MCU_DIMENSIONS = (8, 8)
+    MCU_X_COUNT = 28
+    MCU_Y_COUNT = 28
+
+    Y_QUANT_TABLE = np.array(
+        [[16, 11, 10, 16, 24, 40, 51, 61], [12, 12, 14, 19, 26, 58, 60, 55], [14, 13, 16, 24, 40, 57, 69, 56],
+         [14, 17, 22, 29, 51,
+         87, 80, 62], [18, 22, 37, 56, 68, 109, 103, 77], [24, 35, 55, 64, 81, 104, 113, 92],
+         [49, 64, 78, 87, 103, 121, 120, 101],
+         [72, 92, 95, 98, 112, 100, 103, 99]], dtype=np.int32)
+
+    decoded_data = np.zeros(224 * 224)
+
+    working_index = 0
+    state = "d"
+    for i in range(0, len(encoded_data)):
+        if state == "d":
+            if encoded_data[i] != -1:
+                decoded_data[working_index] = encoded_data[i]
+                working_index += 1
+                if working_index >= len(decoded_data):
+                    break
+            else:
+                state = "x"
+        else:
+            if encoded_data[i] == -1:
+                state = "d"
+            else:
+                working_index += encoded_data[i]
+                if working_index >= len(decoded_data):
+                    break
+
+    decoded_data_split_into_mcus = np.split(decoded_data, 28 * 28)
+
+    # ------ DECODING -----
+
+    img_mcus = []
+    for mcu in decoded_data_split_into_mcus:
+        idct_input = np.reshape(mcu, MCU_DIMENSIONS) * Y_QUANT_TABLE / 8
+        inverse_dct_output = fft.idctn(idct_input, type=2, norm='ortho')
+        img_mcus.append(inverse_dct_output)
+
+    # ----- Form Final Image ---
+    img = []
+    for mcu_x in range(0, MCU_X_COUNT):
+        img_row = []
+        for mcu_y in range(0, MCU_Y_COUNT):
+            img_row.append(img_mcus[8 * mcu_x + mcu_y])
+        img.append(img_row)
+
+    final_img = im.fromarray(np.asarray(np.bmat(img))).convert("RGB")
+    if debug:
+        final_img.show()
+
+    return final_img
+
+
+def run(encoded_dct_output, model, transform):
     """
         Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
         Original Paper: https://osf.io/5a6m7/
 
-        run() runs the model and prints the score out to the console, but this will be adapted to send the data to an endpoint
+        run() takes in and decodes a DCT output from the DE1-SoC, runs the eye contact ML model and logs the score to console 
 
-        base64_encoded_jpeg: a path to a text file containing a base64 encoded jpeg image
+        encoded_dct_output: a path to a text file containing an encoded DCT output
         model: the eye contact model
         transform: the Tensor transformation to be applied on input images
     """
 
-    with open(base64_encoded_jpeg, "r") as f:
-        data = f.read()
-    frame = Image.open(BytesIO(base64.b64decode(data)))
+    with open(encoded_dct_output, "r") as f:
+        encoded_data = f.read()
+
+    frame = decode_data(encoded_data)
     img = transform(frame)
     img.unsqueeze_(0)
     output = model(img)
@@ -167,7 +255,6 @@ def init_model():
     """
     init_model() initializes the mdoel, loads weights, and the data transformation to be applied to input images
     """
-
     cnn_directory = pathlib.Path(__file__).parent
     model_weight = f"{str(cnn_directory)}/data/model_weights.pkl"
 
@@ -188,9 +275,9 @@ def init_model():
 
 if __name__ == "__main__":
     model, transform = init_model()
-
     if len(sys.argv) != 2:
         raise SyntaxError(
-            "Insufficient arguments. Supply a path to a text file containing a base-64 encoded JPEG.")
+            "Insufficient arguments. Supply a path to a text file containing a base-64 encoded JPEG")
     else:
-        run(base64_encoded_jpeg=sys.argv[1], model=model, transform=transform)
+        # If there are keyword arguments
+        run(encoded_dct_output=sys.argv[1], model=model, transform=transform)
