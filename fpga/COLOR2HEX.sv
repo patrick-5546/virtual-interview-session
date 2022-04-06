@@ -27,7 +27,7 @@ module COLOR2HEX (
     always_ff @( posedge CLK ) begin
         /* Bounding box around the 224x224 capture field centered on the 640x480 screen
             - Top left coordinates of capture field:     (208, 128)
-            - Bottom right coordinates of capture field: (432, 352)
+            - Bottom right coordinates of capture field: (431, 351)
         */
         if ( X == 207 && Y == 127 ) begin
             if ( COUNT > 60 ) begin  // VGA is 60 Hz, so update once per second

@@ -356,12 +356,9 @@ module DE1_SOC_D8M_RTL(
         .mY_Cont      ( Y )
     );
 
-    //------RGB to YCbCr conversion (we only need Y) --
-    assign Y_CHANNEL_INT = (16+(((RED<<6) + (RED<<1) + (GREEN<<7) + GREEN + (BLUE<<4) + (BLUE<<3) + BLUE)>>8));
-
     //------Draw bounding box to VGA when SW[0] is down --
     always @( SW[0] or X or Y or RED or GREEN or BLUE ) begin
-        if ( ~SW[0] && (((Y == 127 || Y == 353) && (207 <= X && X <= 433)) || ((X == 207 || X == 433) && (127 <= Y && Y <= 353))) ) begin
+        if ( ~SW[0] && (((Y == 127 || Y == 352) && (207 <= X && X <= 432)) || ((X == 207 || X == 432) && (127 <= Y && Y <= 352)) || (X == 212 && Y == 132) || (X == 209)) ) begin
             BOUND_RED = 8'h00;
             BOUND_GREEN = 8'hFF;
             BOUND_BLUE = 8'hFF;
@@ -372,6 +369,9 @@ module DE1_SOC_D8M_RTL(
             BOUND_BLUE = BLUE;
         end
     end
+
+    //------RGB to YCbCr conversion (we only need Y) --
+    assign Y_CHANNEL_INT = (16+(((BOUND_RED<<6) + (BOUND_RED<<1) + (BOUND_GREEN<<7) + BOUND_GREEN + (BOUND_BLUE<<4) + (BOUND_BLUE<<3) + BOUND_BLUE)>>8));
 
     //------Write RGB or Y channel values of bounding box top left corner to HEX every second --
     // Write RGB when SW[1] is up, else write integer part of Y channel

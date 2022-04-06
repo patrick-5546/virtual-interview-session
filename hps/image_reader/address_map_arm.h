@@ -6,7 +6,7 @@
 #define IrDA_BASE              0x00001020
 #define TIMER0_BASE            0x00002000
 #define TIMER1_BASE            0x00002020
-#define IMAGE_READER_BASE      0x00002050
+#define IMAGE_READER_BASE      0x00000000
 #define AV_CONFIG_BASE         0x00003000
 #define AUDIO_BASE             0x00003040
 // Audio Core Registers

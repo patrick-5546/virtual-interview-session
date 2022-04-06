@@ -57,6 +57,22 @@
          type = "String";
       }
    }
+   element Computer_System
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
+   element Computer_System
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Cyclone V";
+         type = "String";
+      }
+   }
    element Image_Reader
    {
       datum _sortIndex
@@ -127,16 +143,12 @@
  <parameter name="useTestBenchNamingPattern" value="false" />
  <instanceScript></instanceScript>
  <interface name="hps_io" internal="ARM_A9_HPS.hps_io" type="conduit" dir="end" />
- <interface name="image_reader_color_data" internal="Image_Reader.color_data" />
  <interface
    name="image_reader_indata"
    internal="Image_Reader.indata"
    type="conduit"
    dir="end" />
- <interface name="image_reader_ix" internal="Image_Reader.iX" />
- <interface name="image_reader_iy" internal="Image_Reader.iY" />
- <interface name="image_reader_iy_channel" internal="Image_Reader.iY_CHANNEL" />
- <interface name="image_reader_vga_clk" internal="Image_Reader.VGA_CLK" />
+ <interface name="image_reader_vga_clk" internal="Image_Reader.vga_clk" />
  <interface name="image_reader_x_coord" internal="Image_Reader.x_coord" />
  <interface name="image_reader_y_channel" internal="Image_Reader.y_channel" />
  <interface name="image_reader_y_coord" internal="Image_Reader.y_coord" />
@@ -737,9 +749,9 @@
    kind="avalon"
    version="18.1"
    start="ARM_A9_HPS.h2f_lw_axi_master"
-   end="Image_Reader.avalon_slave_0">
+   end="Image_Reader.avalon_slave_0_1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x2050" />
+  <parameter name="baseAddress" value="0x0000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -755,9 +767,9 @@
    kind="avalon"
    version="18.1"
    start="JTAG_to_FPGA_Bridge.master"
-   end="Image_Reader.avalon_slave_0">
+   end="Image_Reader.avalon_slave_0_1">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0xff202050" />
+  <parameter name="baseAddress" value="0xff200000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
