@@ -219,37 +219,38 @@ function Home({ user, Logout, updateMetricsProps, updateMetricsPropsOld }) {
           Please select an option to start the interview!
         </h1>
       </div>
-      <div style={{ marginLeft: '40%', marginTop: '60px' }}></div>
+      <div style={{ marginLeft: '15%', marginTop: '60px'}}>
       <ButtonGroup aria-label="outlined primary button group">
-      <Box color="black" borderRadius="5px" height="80px" width="150px" bgcolor="orange" p="10px" cursor="pointer" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangeC(); handleOnClick();}}>
+      <Box color="black" borderRadius="30px" height="80px" width="150px" bgcolor="orange" fontSize="24px" p="10px" cursor="pointer" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangeC(); handleOnClick();}}>
         C 
       </Box>
      </ButtonGroup>
      <ButtonGroup orientation="horizontal" aria-label="outlined primary button group">
-     <Box marginLeft="40px" borderRadius="5px" height="80px" width="150px" color="black" bgcolor="orange" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangeCplus(); handleOnClick();}}>
+     <Box marginLeft="40px" borderRadius="30px" height="80px" width="150px" color="black" bgcolor="orange" fontSize="24px" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangeCplus(); handleOnClick();}}>
         C++ 
       </Box>
       </ButtonGroup>
       <ButtonGroup orientation="horizontal" aria-label="outlined primary button group">
-     <Box marginLeft="40px" borderRadius="5px" height="80px" width="150px" color="black" bgcolor="orange" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangejs(); handleOnClick();}}>
+     <Box marginLeft="40px" borderRadius="30px" height="80px" width="200px" color="black" bgcolor="orange" fontSize="24px" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangejs(); handleOnClick();}}>
         JavaScript 
       </Box>
       </ButtonGroup>
       <ButtonGroup orientation="horizontal" aria-label="outlined primary button group">
-     <Box marginLeft="40px" borderRadius="5px" height="80px" width="150px" color="black" bgcolor="orange" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangePy(); handleOnClick();}}>
+     <Box marginLeft="40px" borderRadius="30px" height="80px" width="150px" color="black" bgcolor="orange" fontSize="24px" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangePy(); handleOnClick();}}>
         Python 
       </Box>
       </ButtonGroup>
       <ButtonGroup orientation="horizontal" aria-label="outlined primary button group">
-     <Box marginLeft="40px" borderRadius="5px" height="80px" width="150px" color="black" bgcolor="orange" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangeHw(); handleOnClick();}}>
+     <Box marginLeft="40px" borderRadius="30px" height="80px" width="180px" color="black" bgcolor="orange" fontSize="24px" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangeHw(); handleOnClick();}}>
         Hardware 
       </Box>
       </ButtonGroup>
       <ButtonGroup orientation="horizontal" aria-label="outlined primary button group">
-     <Box marginLeft="40px" borderRadius="5px" height="80px" width="150px" color="black" bgcolor="orange" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangeB(); handleOnClick();}}>
+     <Box marginLeft="40px" borderRadius="30px" height="80px" width="200px" color="black" fontSize="24px" bgcolor="orange" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangeB(); handleOnClick();}}>
         Behavioural 
       </Box>
       </ButtonGroup>
+      </div>
       <div>
         {show && (<div className="main-section">
             <div className="clock-holder">
