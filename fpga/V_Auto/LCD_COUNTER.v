@@ -12,8 +12,8 @@ output reg  ACTIV_V
 reg rHS ;
 reg rVS ;
 
-parameter H_OFF =12'd224 ; 
-parameter V_OFF =12'd224 ; 
+parameter H_OFF =12'd200 ; 
+parameter V_OFF =12'd200 ; 
 
 reg [15:0] H_CEN  ;//12'd450 ; 
 reg [15:0] V_CEN  ;//12'd250 ; 
