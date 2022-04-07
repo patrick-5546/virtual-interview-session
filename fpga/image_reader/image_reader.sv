@@ -25,7 +25,7 @@ module image_reader (
     logic [7:0] Y_CHANNEL_INT;
     logic [10:0] X, Y;
 
-    reg unsigned [7:0] img [50175:0]; // 8-bit vector net with a depth of 224 x 224
+    reg unsigned [401399:0] img; // 8-bit vector net with a depth of 224 x 224
 
     logic pixel_in_bounding_box, desired_pixel_in_bounding_box;
 
@@ -54,28 +54,38 @@ module image_reader (
 
     always_ff @(posedge clk)
         if(!desired_pixel_in_bounding_box && pixel_in_bounding_box)
-            img[224 * (Y-128) + (X-208)] <= Y_CHANNEL_INT;
+            img[(224 * (Y-128) + (X-208)) << 3] <= Y_CHANNEL_INT;
 
     assign desiredX = desired_pixel % 224;
     assign desiredY = desired_pixel / 224;
-    assign blockUpperLeftX = (desiredX >> 3) << 3;
-    assign blockUpperLeftY = (desiredY >> 3) << 3;
-    assign blockUpperLeft = desired_pixel_in_bounding_box ? (224 * blockUpperLeftY + blockUpperLeftX) : 0;
+    assign blockUpperLeftX = (desiredY >> 3) << 3;
+    assign blockUpperLeftY = (desiredX >> 3) << 3;
+    assign blockUpperLeft = desired_pixel_in_bounding_box ? (224 * blockUpperLeftY + blockUpperLeftX) << 3: 0;
 
     assign block_ind = (((desiredY - blockUpperLeftY) << 3) + desiredX - blockUpperLeftX) << 4;
 
-    assign dct_in = {64{8'd106}};
-    // always_comb
-    //     dct_in = {
-    //         img[224*7 + 7], img[224*7 + 6], img[224*7 + 5], img[224*7 + 4], img[224*7 + 3], img[224*7 + 2], img[224*7 + 1], img[224*7 + 0],
-    //         img[224*6 + 7], img[224*6 + 6], img[224*6 + 5], img[224*6 + 4], img[224*6 + 3], img[224*6 + 2], img[224*6 + 1], img[224*6 + 0],
-    //         img[224*5 + 7], img[224*5 + 6], img[224*5 + 5], img[224*5 + 4], img[224*5 + 3], img[224*5 + 2], img[224*5 + 1], img[224*5 + 0],
-    //         img[224*4 + 7], img[224*4 + 6], img[224*4 + 5], img[224*4 + 4], img[224*4 + 3], img[224*4 + 2], img[224*4 + 1], img[224*4 + 0],
-    //         img[224*3 + 7], img[224*3 + 6], img[224*3 + 5], img[224*3 + 4], img[224*3 + 3], img[224*3 + 2], img[224*3 + 1], img[224*3 + 0],
-    //         img[224*2 + 7], img[224*2 + 6], img[224*2 + 5], img[224*2 + 4], img[224*2 + 3], img[224*2 + 2], img[224*2 + 1], img[224*2 + 0],
-    //         img[224*1 + 7], img[224*1 + 6], img[224*1 + 5], img[224*1 + 4], img[224*1 + 3], img[224*1 + 2], img[224*1 + 1], img[224*1 + 0],
-    //         img[224*0 + 7], img[224*0 + 6], img[224*0 + 5], img[224*0 + 4], img[224*0 + 3], img[224*0 + 2], img[224*0 + 1], img[224*0 + 0]
-    //     };
+    // assign dct_in = {64{8'd106}};
+    always_comb
+        // dct_in = {
+        //     img[224*7 + 7], img[224*7 + 6], img[224*7 + 5], img[224*7 + 4], img[224*7 + 3], img[224*7 + 2], img[224*7 + 1], img[224*7 + 0],
+        //     img[224*6 + 7], img[224*6 + 6], img[224*6 + 5], img[224*6 + 4], img[224*6 + 3], img[224*6 + 2], img[224*6 + 1], img[224*6 + 0],
+        //     img[224*5 + 7], img[224*5 + 6], img[224*5 + 5], img[224*5 + 4], img[224*5 + 3], img[224*5 + 2], img[224*5 + 1], img[224*5 + 0],
+        //     img[224*4 + 7], img[224*4 + 6], img[224*4 + 5], img[224*4 + 4], img[224*4 + 3], img[224*4 + 2], img[224*4 + 1], img[224*4 + 0],
+        //     img[224*3 + 7], img[224*3 + 6], img[224*3 + 5], img[224*3 + 4], img[224*3 + 3], img[224*3 + 2], img[224*3 + 1], img[224*3 + 0],
+        //     img[224*2 + 7], img[224*2 + 6], img[224*2 + 5], img[224*2 + 4], img[224*2 + 3], img[224*2 + 2], img[224*2 + 1], img[224*2 + 0],
+        //     img[224*1 + 7], img[224*1 + 6], img[224*1 + 5], img[224*1 + 4], img[224*1 + 3], img[224*1 + 2], img[224*1 + 1], img[224*1 + 0],
+        //     img[224*0 + 7], img[224*0 + 6], img[224*0 + 5], img[224*0 + 4], img[224*0 + 3], img[224*0 + 2], img[224*0 + 1], img[224*0 + 0]
+        // };
+        dct_in = {
+            img[blockUpperLeft + 224*7 +: 64],
+            img[blockUpperLeft + 224*6 +: 64],
+            img[blockUpperLeft + 224*5 +: 64],
+            img[blockUpperLeft + 224*4 +: 64],
+            img[blockUpperLeft + 224*3 +: 64],
+            img[blockUpperLeft + 224*2 +: 64],
+            img[blockUpperLeft + 224*1 +: 64],
+            img[blockUpperLeft + 224*0 +: 64],
+        };
 
     //=============================================================================
     // Structural coding
@@ -109,7 +119,7 @@ module image_reader (
         readdata <= 32'b0; // default value is 0
         if (rd_en == 1)
             if ( addr == 2'd0 )
-                readdata <= {dct_out[block_ind +: 16], 8'd0, img[desired_pixel]};
+                readdata <= {16'd0, 8'd0, img[desired_pixel << 3 +: 8]};
             else if ( addr == 2'd1 )
                 readdata <= {blockUpperLeft[15:0], blockUpperLeftX[7:0], blockUpperLeftY[7:0]};
             else if ( addr == 2'd2 )
