@@ -160,20 +160,21 @@ class Bottleneck(nn.Module):
 
 def decode_data(encoded_data, debug=False):
     """
-    Decode_data takes in encoded data produced by the DE1-SoC, which encodes a grayscale single-channel 224 x 224 photo.
-    This encoded data gets decoded into an RGB image in decode_data().
+    Decode_data takes in a list of numbers produced by the DE1-SoC, which contains a single MCU encoded using DCT, combined with raw image data. 
+    This encoding describes a 224 pixel x 224 pixel single-channel (grayscale) image.
+    The result will be a full conversion into a three-channel RGB image in decode_data().
 
-    Assumes input is a list of numbers, which encodes MCU data using the format [mcu_i data before trailing zeroes, -1, number of trailing zeroes in mcu_i, -1] for i in [0, 28*28]
-    The length of each array [mcu_i data before trailing zeroes, -1, number of trailing zeroes in mcu_i, -1] is 64, the size of an 8x8 MCU
+    The singular MCU encoded by the DE1 will be encoded using the following format: [mcu data before trailing zeroes, -391, number of trailing zeroes in mcu, -391]
 
     Returns a PIL RGB Image. 
 
     Note: debug flag controls whether image is shown. 
     """
-    encoded_data = ast.literal_eval(encoded_data)
+    encoded_data = np.array(ast.literal_eval(encoded_data))
     MCU_DIMENSIONS = (8, 8)
     MCU_X_COUNT = 28
     MCU_Y_COUNT = 28
+    MCU_TOTAL = MCU_X_COUNT * MCU_Y_COUNT
 
     Y_QUANT_TABLE = np.array(
         [[16, 11, 10, 16, 24, 40, 51, 61], [12, 12, 14, 19, 26, 58, 60, 55], [14, 13, 16, 24, 40, 57, 69, 56],
@@ -182,43 +183,46 @@ def decode_data(encoded_data, debug=False):
          [49, 64, 78, 87, 103, 121, 120, 101],
          [72, 92, 95, 98, 112, 100, 103, 99]], dtype=np.int32)
 
-    decoded_data = np.zeros(224 * 224)
+    marker_index = np.where(encoded_data == -391)
 
-    working_index = 0
-    state = "d"
-    for i in range(0, len(encoded_data)):
-        if state == "d":
-            if encoded_data[i] != -1:
-                decoded_data[working_index] = encoded_data[i]
-                working_index += 1
-                if working_index >= len(decoded_data):
-                    break
-            else:
-                state = "x"
-        else:
-            if encoded_data[i] == -1:
-                state = "d"
-            else:
-                working_index += encoded_data[i]
-                if working_index >= len(decoded_data):
-                    break
+    # print(marker_index)
 
-    decoded_data_split_into_mcus = np.split(decoded_data, 28 * 28)
+    # where the first -391 marker is
+    if len(marker_index[0]) != 0:
+        encoded_zero_start_marker = marker_index[0][0]
+        # where the second -391 marker is
+        encoded_zero_end_marker = marker_index[0][1]
+        top_left_mcu_flat = np.concatenate((encoded_data[0:encoded_zero_start_marker], np.zeros(
+            encoded_data[encoded_zero_start_marker + 1])))
 
+        # Apart from the top left MCU, split rest of encoded data into "MCU" shaped blocks. These don't need decoding.
+        raw_data_without_top_left_mcu = np.split(
+            encoded_data[encoded_zero_end_marker + 1:], MCU_TOTAL - 1)
+    else:
+        top_left_mcu_flat = np.array(encoded_data[0:64])
+        raw_data_without_top_left_mcu = np.split(
+            encoded_data[64:], MCU_TOTAL - 1)
     # ------ DECODING -----
-
     img_mcus = []
-    for mcu in decoded_data_split_into_mcus:
-        idct_input = np.reshape(mcu, MCU_DIMENSIONS) * Y_QUANT_TABLE / 8
+
+    if len(marker_index[0]) != 0:
+        # apply IDCT on the top left MCU only
+        idct_input = np.reshape(
+            top_left_mcu_flat, MCU_DIMENSIONS) * Y_QUANT_TABLE / 8
         inverse_dct_output = fft.idctn(idct_input, type=2, norm='ortho')
         img_mcus.append(inverse_dct_output)
+    else:
+        img_mcus.append(np.reshape(top_left_mcu_flat, MCU_DIMENSIONS))
+
+    for raw_data in raw_data_without_top_left_mcu:
+        img_mcus.append(np.reshape(raw_data, MCU_DIMENSIONS))
 
     # ----- Form Final Image ---
     img = []
-    for mcu_x in range(0, MCU_X_COUNT):
+    for mcu_y in range(0, MCU_Y_COUNT):
         img_row = []
-        for mcu_y in range(0, MCU_Y_COUNT):
-            img_row.append(img_mcus[8 * mcu_x + mcu_y])
+        for mcu_x in range(0, MCU_X_COUNT):
+            img_row.append(img_mcus[28*mcu_y + mcu_x])
         img.append(img_row)
 
     final_img = im.fromarray(np.asarray(np.bmat(img))).convert("RGB")
