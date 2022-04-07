@@ -242,10 +242,12 @@ module DE1_SOC_D8M_RTL(
     assign UART_RTS =0;
     assign UART_TXD =0;
     //------HEX OFF --
-    assign HEX2           = 7'h7F;
-    assign HEX3           = 7'h7F;
-    assign HEX4           = 7'h7F;
-    assign HEX5           = 7'h7F;
+    // assign HEX0           = 7'h7F;
+    // assign HEX1           = 7'h7F;
+    // assign HEX2           = 7'h7F;
+    // assign HEX3           = 7'h7F;
+    // assign HEX4           = 7'h7F;
+    // assign HEX5           = 7'h7F;
 
     //------ MIPI BRIGE & CAMERA RESET  --
     assign CAMERA_PWDN_n  = 1;
@@ -361,10 +363,10 @@ module DE1_SOC_D8M_RTL(
         - Bottom right coordinates of capture field: (431, 351)
     */
     wire bounding_box = ((Y == 127 || Y == 352) && (207 <= X && X <= 432)) || ((X == 207 || X == 432) && (127 <= Y && Y <= 352));
-    // wire border =       ((Y == 129 || Y == 350) && (209 <= X && X <= 430)) || ((X == 209 || X == 430) && (129 <= Y && Y <= 350));
+    wire border =       ((Y == 129 || Y == 350) && (209 <= X && X <= 430)) || ((X == 209 || X == 430) && (129 <= Y && Y <= 350));
     wire block = (208 <= X && X <= 215) && (128 <= Y && Y <= 135);
     //------Draw bounding box to VGA when SW[0] is down, test pixels when SW[0] is up --
-    always @( SW[0] or bounding_box or block or RED or GREEN or BLUE ) begin
+    always @( SW[0] or bounding_box or border or block or RED or GREEN or BLUE ) begin
         if ( ~SW[0] ) begin
             if ( bounding_box ) begin
                 BOUND_RED = 8'h00;
@@ -378,8 +380,7 @@ module DE1_SOC_D8M_RTL(
             end
         end
         else begin
-            // if ( border || block ) begin
-            if ( block ) begin
+            if ( border || block ) begin
                 BOUND_RED = 8'hFF;
                 BOUND_GREEN = 8'h00;
                 BOUND_BLUE = 8'hFF;
@@ -397,16 +398,16 @@ module DE1_SOC_D8M_RTL(
 
     //------Write RGB or Y channel values of bounding box top left corner to HEX every second --
     // Write RGB when SW[1] is up, else write integer part of Y channel
-    // COLOR2HEX	c2h (
-    //     .CLK			( VGA_CLK ),
-    //     .selRGB         ( SW[1] ),
-    //     .X  			( X ),
-    //     .Y	    		( Y ),
-    //     .iR				( BOUND_RED ),
-    //     .iG				( BOUND_GREEN ),
-    //     .iB				( BOUND_BLUE ),
-    //     .HEX			( {HEX5, HEX4, HEX3, HEX2, HEX1, HEX0} )
-    // );
+    COLOR2HEX	c2h (
+        .CLK			( VGA_CLK ),
+        .selRGB         ( SW[1] ),
+        .X  			( X ),
+        .Y	    		( Y ),
+        .iR				( BOUND_RED ),
+        .iG				( BOUND_GREEN ),
+        .iB				( BOUND_BLUE ),
+        .HEX			( {HEX5, HEX4, HEX3, HEX2, HEX1, HEX0} )
+    );
 
     //------AOTO FOCUS ENABLE  --
     AUTO_FOCUS_ON  vd(
@@ -474,12 +475,12 @@ module DE1_SOC_D8M_RTL(
     //     .hex_fps_l( HEX0 )
     // );
 
-    // //--LED DISPLAY--
-    // CLOCKMEM  ck1 ( .CLK(VGA_CLK),          .CLK_FREQ(25000000), .CK_1HZ(D8M_CK_HZ)   );//25MHZ
-    // CLOCKMEM  ck2 ( .CLK(MIPI_REFCLK),      .CLK_FREQ(20000000), .CK_1HZ(D8M_CK_HZ2)  );//20MHZ
-    // CLOCKMEM  ck3 ( .CLK(MIPI_PIXEL_CLK_),  .CLK_FREQ(25000000), .CK_1HZ(D8M_CK_HZ3)  );//25MHZ
+    //--LED DISPLAY--
+    CLOCKMEM  ck1 ( .CLK(VGA_CLK),          .CLK_FREQ(25000000), .CK_1HZ(D8M_CK_HZ)   );//25MHZ
+    CLOCKMEM  ck2 ( .CLK(MIPI_REFCLK),      .CLK_FREQ(20000000), .CK_1HZ(D8M_CK_HZ2)  );//20MHZ
+    CLOCKMEM  ck3 ( .CLK(MIPI_PIXEL_CLK_),  .CLK_FREQ(25000000), .CK_1HZ(D8M_CK_HZ3)  );//25MHZ
 
-    // assign LEDR = { D8M_CK_HZ, D8M_CK_HZ2,D8M_CK_HZ3, 5'h0,CAMERA_MIPI_RELAESE, MIPI_BRIDGE_RELEASE };
+    assign LEDR = { D8M_CK_HZ, D8M_CK_HZ2,D8M_CK_HZ3, 5'h0,CAMERA_MIPI_RELAESE, MIPI_BRIDGE_RELEASE };
 
     Computer_System The_System (
         ////////////////////////////////////

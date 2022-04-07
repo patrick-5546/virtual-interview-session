@@ -217,7 +217,7 @@ int * read_image(void)
    int i;
    for (i = 0; i < 50176; ++i) {
       *IMAGE_READER_ptr = i; // write the desired pixel to component
-      img[i] = *IMAGE_READER_ptr & 0xFF;
+      img[i] = *IMAGE_READER_ptr;
    }
 
    // Writing out of bounds pixel to resume updating pixel values
@@ -235,9 +235,12 @@ int main(void)
 
    printf("Printing the Y channel of the first 10 pixels\n");
    int * img = read_image();
-   int i;
+   int i, y_channel, dct;
    for (i = 0; i < 10; ++i) {
-      printf("\tPixel %d: %x\n", i, img[i]);
+      y_channel = img[i] & 0xFFFF;
+      dct = (img[i] >> 16) & 0xFFFF;
+      printf("\tPixel %d: %x, %x\n", i, y_channel, dct);
+      img[i] = dct;
    }
 
    return 0;
