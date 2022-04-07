@@ -5,12 +5,9 @@ import Box from '@material-ui/core/Box';
 import { Button, ButtonGroup } from "@material-ui/core";
 import DisplayComponent from './DisplayComponent';
 import BtnComponent from './BtnComponent';
-
 import Metrics from "../routes/Metrics";
-import Interview from "../routes/Interview";
-import Questions from "../routes/Questions";
 
-function Home({ user, Logout, updateMetricsProps }) {
+function Home({ user, Logout, updateMetricsProps, updateMetricsPropsOld }) {
 
   //Timer//
   const [time, setTime] = useState({ms:0, s:0, m:0});
@@ -24,6 +21,20 @@ function Home({ user, Logout, updateMetricsProps }) {
     run();
     setStatus(1);
     setInterv(setInterval(run, 10));
+
+    axios
+    .get(`${APIUrl}/start`)
+    .then(
+      (response) => {
+      },
+      (reject) => {
+        console.log(reject);
+      }
+    )
+    .catch((err) => {
+      console.error(err);
+    });
+
   };
 
   var updatedMs = time.ms, updatedS = time.s, updatedM = time.m;
@@ -50,6 +61,19 @@ function Home({ user, Logout, updateMetricsProps }) {
   const stop = () => {
     clearInterval(interv);
     setStatus(2);
+
+    axios
+    .get(`${APIUrl}/stop`)
+    .then(
+      (response) => {
+      },
+      (reject) => {
+        console.log(reject);
+      }
+    )
+    .catch((err) => {
+      console.error(err);
+    });
   };
 
   const reset = () => {
@@ -77,6 +101,21 @@ function Home({ user, Logout, updateMetricsProps }) {
     navigate(path);
   }
 
+  const routeChangePy = () =>{ 
+    let path = `/python`; 
+    navigate(path);
+  }
+
+  const routeChangeHw = () =>{ 
+    let path = `/hardware`; 
+    navigate(path);
+  }
+
+  const routeChangeB = () =>{ 
+    let path = `/behavioural`; 
+    navigate(path);
+  }
+
   const [show, setShow] = useState(false);
     const handleOnClick = () => {
         setShow(true);
@@ -89,6 +128,15 @@ function Home({ user, Logout, updateMetricsProps }) {
   var data = {
     eyecontact: eyecontact,
     sentiment_score: sentiment_score
+  }
+
+  const [eyecontactOld, setEyecontactOld] = useState("");
+  const [sentiment_scoreOld, setSentimentscoreOld] = useState("");
+
+  
+  var dataOld = {
+    eyecontactOld: eyecontactOld,
+    sentiment_scoreOld: sentiment_scoreOld
   }
 
   const updatedata = (eyecontact, sentiment_score) => {
@@ -106,7 +154,7 @@ function Home({ user, Logout, updateMetricsProps }) {
           .get(`${APIUrl}/feedback1`)
           .then(
             (response) => {
-              setEyecontact(response.data.feedback);
+              setEyecontact(response.data);
               axios
               .get(`${APIUrl}/feedback2`)
               .then(
@@ -124,7 +172,32 @@ function Home({ user, Logout, updateMetricsProps }) {
             console.error(err);
           });
         }
-  
+
+        const old = () => {
+          //useEffect(() => {
+            axios
+              .get(`${APIUrl}/feedback3`)
+              .then(
+                (response) => {
+                  setEyecontactOld(response.data);
+                  axios
+                  .get(`${APIUrl}/feedback4`)
+                  .then(
+                    (response) => {
+                      setSentimentscoreOld(response.data.feedback);
+                      updateMetricsPropsOld(dataOld);
+                    }
+                  )
+                },
+                (reject) => {
+                  console.log(reject);
+                }
+              )
+              .catch((err) => {
+                console.error(err);
+              });
+            }
+
   return (
     <div>
       <nav className="navbar navbar-expand-lg navbar-light bg-light">
@@ -134,6 +207,9 @@ function Home({ user, Logout, updateMetricsProps }) {
           </h2>
           <button type="button" aria-expanded="false" onClick={update}>
             <Link to="/feedback"><span>Feedback </span> </Link>
+          </button>
+          <button type="button" aria-expanded="false" onClick={old}>
+            <Link to="/feedback2"><span>Previous Feedback </span> </Link>
           </button>
         </div>
         <button onClick={Logout}> <Link to="">Logout</Link></button>
@@ -157,6 +233,21 @@ function Home({ user, Logout, updateMetricsProps }) {
       <ButtonGroup orientation="horizontal" aria-label="outlined primary button group">
      <Box marginLeft="40px" borderRadius="5px" height="80px" width="150px" color="black" bgcolor="orange" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangejs(); handleOnClick();}}>
         JavaScript 
+      </Box>
+      </ButtonGroup>
+      <ButtonGroup orientation="horizontal" aria-label="outlined primary button group">
+     <Box marginLeft="40px" borderRadius="5px" height="80px" width="150px" color="black" bgcolor="orange" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangePy(); handleOnClick();}}>
+        Python 
+      </Box>
+      </ButtonGroup>
+      <ButtonGroup orientation="horizontal" aria-label="outlined primary button group">
+     <Box marginLeft="40px" borderRadius="5px" height="80px" width="150px" color="black" bgcolor="orange" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangeHw(); handleOnClick();}}>
+        Hardware 
+      </Box>
+      </ButtonGroup>
+      <ButtonGroup orientation="horizontal" aria-label="outlined primary button group">
+     <Box marginLeft="40px" borderRadius="5px" height="80px" width="150px" color="black" bgcolor="orange" p="10px" display="flex" justifyContent="center" alignItems="center" fontWeight="bold" style={{cursor:'pointer'}} onClick={() => {routeChangeB(); handleOnClick();}}>
+        Behavioural 
       </Box>
       </ButtonGroup>
       <div>

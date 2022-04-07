@@ -9,6 +9,8 @@ import Interview from "./routes/Interview";
 import Questions from "./routes/Questions";
 import DisplayComponent from './components/DisplayComponent';
 import BtnComponent from './components/BtnComponent';
+import MetricsOld from "./routes/MetricsOld";
+import ChartsEmbedSDK from "@mongodb-js/charts-embed-dom";
 
 function App() {
   const adminUser = {
@@ -24,62 +26,33 @@ function App() {
   const [question, setQuestion] = useState("");
   const [question2, setQuestion2] = useState("");
   const [question3, setQuestion3] = useState("");
+  const [question4, setQuestion4] = useState("");
+  const [question5, setQuestion5] = useState("");
+  const [question6, setQuestion6] = useState("");
   
   var data2 = {
     question: question
   }
+  
   var data3 = {
     question: question2
   }
+  
   var data4 = {
     question: question3
   }
-
-  /*
-  var data = {
-    eyecontact: eyecontact,
-    sentiment_score: sentiment_score
-  }
-
-  const updatedata = (eyecontact, sentiment_score) => {
-    setEyecontact(eyecontact);
-    setSentimentscore(sentiment_score);
-  }
-  */
   
-  /*
-  //const update = () => {
-  useEffect(() => {
-    axios
-      .get(`${APIUrl}/feedback1`)
-      .then(
-        (response) => {
-          setEyecontact(response.data.feedback);
-        },
-        (reject) => {
-          console.log(reject);
-        }
-      )
-      .catch((err) => {
-        console.error(err);
-      });
-    
-      axios
-      .get(`${APIUrl}/feedback2`)
-      .then(
-        (response) => {
-          setSentimentscore(response.data.feedback);
-        },
-        (reject) => {
-          console.log(reject);
-        }
-      )
-      .catch((err) => {
-        console.log(err);
-      });
-    */
-    //useEffect(update, []);
-    
+  var data5 = {
+    question: question4
+  }
+
+  var data6 = {
+    question: question5
+  }
+
+  var data7 = {
+    question: question6
+  }
 
     useEffect(() => {  
       axios
@@ -123,6 +96,48 @@ function App() {
       .catch((err) => {
         console.error(err);
       });
+
+      axios
+      .get(`${APIUrl}/python`)
+      .then(
+        (response) => {
+          setQuestion4([response.data[0].q, response.data[1].q, response.data[2].q, response.data[3].q, response.data[4].q]);
+        },
+        (reject) => {
+          console.log(reject);
+        }
+      )
+      .catch((err) => {
+        console.error(err);
+      });
+
+      axios
+      .get(`${APIUrl}/hardware`)
+      .then(
+        (response) => {
+          setQuestion5([response.data[0].q, response.data[1].q, response.data[2].q, response.data[3].q, response.data[4].q]);
+        },
+        (reject) => {
+          console.log(reject);
+        }
+      )
+      .catch((err) => {
+        console.error(err);
+      });
+
+      axios
+      .get(`${APIUrl}/behavioural`)
+      .then(
+        (response) => {
+          setQuestion6([response.data[0].q, response.data[1].q, response.data[2].q, response.data[3].q, response.data[4].q]);
+        },
+        (reject) => {
+          console.log(reject);
+        }
+      )
+      .catch((err) => {
+        console.error(err);
+      });
   }, []);
 
   const Login = (details) => {
@@ -157,13 +172,20 @@ function App() {
     setMetrics(metrics);
   }
 
+  const [metricsOld, setMetricsOld] = useState({}); 
+
+  const updateMetricsOld = (metricsOld) => {
+    setMetricsOld(metricsOld);
+  }
+
+  
 
   return (
     <Router>
       <div className="App">
         {user.email !== "" ? (
           <div className="welcome">
-            <Home user={user} Logout={Logout} updateMetricsProps={updateMetrics}></Home>
+            <Home user={user} Logout={Logout} updateMetricsProps={updateMetrics} updateMetricsPropsOld={updateMetricsOld}></Home>
             <Routes>
               <Route path="/interview" element={<Interview />}></Route>
               <Route
@@ -174,8 +196,16 @@ function App() {
                   />
                 }
               >
-                
               </Route>
+              <Route path="/interview" element={<Interview />}></Route>
+              <Route
+                path="/feedback2"
+                element={
+                  <MetricsOld
+                    data={metricsOld}
+                  />
+                }
+              ></Route>
             <Route path="/interview" element={<Interview />}></Route>
               <Route
                 path="/cquestion"
@@ -200,6 +230,33 @@ function App() {
                 element={
                   <Questions
                     data={data4}
+                  />
+                }
+              ></Route>
+              <Route path="/interview" element={<Interview />}></Route>
+              <Route
+                path="/python"
+                element={
+                  <Questions
+                    data={data5}
+                  />
+                }
+              ></Route>
+              <Route path="/interview" element={<Interview />}></Route>
+              <Route
+                path="/hardware"
+                element={
+                  <Questions
+                    data={data6}
+                  />
+                }
+              ></Route>
+              <Route path="/interview" element={<Interview />}></Route>
+              <Route
+                path="/behavioural"
+                element={
+                  <Questions
+                    data={data7}
                   />
                 }
               ></Route>
