@@ -14,44 +14,43 @@ PLAY_BACK_AUDIO = False
 POST_TO_SERVER = True
 RECORDING_LENGTH = 30
 SAMPLING_RATE = audio.MIN_SAMPLING_RATE  # 8000 Hz
-SAVE_JSON = True
+SAVE_JSON = False
 SERVER_ENDPOINT = 'http://34.222.245.107:6000/api/audio'
 VOLUME_MULTIPLIER = 42
 
 if not audio.open_dev():
     sys.exit()
 
-print('Audio will be recorded at ' + str(SAMPLING_RATE) + ' Hz')
-print('Recording audio for ' + str(RECORDING_LENGTH) + ' seconds')
-wave_data = []
-audio.init()
-audio.sampling_rate(SAMPLING_RATE)
-for _ in range(SAMPLING_RATE * RECORDING_LENGTH):
-    audio.wait_read()
-    left, _ = audio.read()
-    wave_data.append(left / AUDIO_TO_WAV_DIVIDER)
+while True:
+    print('Audio will be recorded at ' + str(SAMPLING_RATE) + ' Hz')
+    print('Recording audio for ' + str(RECORDING_LENGTH) + ' seconds')
+    wave_data = []
+    audio.init()
+    audio.sampling_rate(SAMPLING_RATE)
+    for _ in range(SAMPLING_RATE * RECORDING_LENGTH):
+        audio.wait_read()
+        left, _ = audio.read()
+        wave_data.append(left / AUDIO_TO_WAV_DIVIDER)
 
-if PLAY_BACK_AUDIO:
-    print('Playing back audio')
-    for data in wave_data:
-        audio.wait_write()
-        left = data * AUDIO_TO_WAV_DIVIDER * VOLUME_MULTIPLIER
-        if left > audio.MAX_VOLUME:
-            print('WARN: Max volume exceeded, writing audio.MAX_VOLUME')
-            left = audio.MAX_VOLUME
-        audio.write_left(left)
-        audio.write_right(left)
+    if PLAY_BACK_AUDIO:
+        print('Playing back audio')
+        for data in wave_data:
+            audio.wait_write()
+            left = data * AUDIO_TO_WAV_DIVIDER * VOLUME_MULTIPLIER
+            if left > audio.MAX_VOLUME:
+                print('WARN: Max volume exceeded, writing audio.MAX_VOLUME')
+                left = audio.MAX_VOLUME
+            audio.write_left(left)
+            audio.write_right(left)
+
+    if POST_TO_SERVER:
+        print('Posting wave_data')
+        requests.post(SERVER_ENDPOINT, data={'wav': json.dumps(wave_data)})
+
+    if SAVE_JSON:
+        print('Saving json file')
+        with open(JSON_FN, 'w') as outfile:
+            json.dump(wave_data, outfile)
 
 audio.close()
-
-if POST_TO_SERVER:
-    print('Posting wave_data')
-    requests.post(SERVER_ENDPOINT, data={'wav': json.dumps(wave_data)})
-
-if SAVE_JSON:
-    print('Saving json file')
-    with open(JSON_FN, 'w') as outfile:
-        json.dump(wave_data, outfile)
-
-
 print('Finished program, exiting...')
