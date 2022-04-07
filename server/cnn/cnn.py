@@ -1,16 +1,21 @@
 import torch
 import torch.nn as nn
 import math
-import dlib
-import cv2
-import torch.nn.functional as F
 from torchvision import transforms
-from PIL import Image
-from tqdm import tqdm
 import sys
+import numpy as np
+import pathlib
+import numpy as np
+import scipy.fft as fft
+from PIL import Image as im
+import ast
 
 
 def model_static(pretrained=False, **kwargs):
+    """
+    Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
+    Original Paper: https://osf.io/5a6m7/
+    """
     model = ResNet([3, 4, 6, 3], **kwargs)
     if pretrained:
         model_dict = model.state_dict()
@@ -22,6 +27,11 @@ def model_static(pretrained=False, **kwargs):
 
 
 class ResNet(nn.Module):
+    """
+    Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
+    Original Paper: https://osf.io/5a6m7/
+    """
+
     def __init__(self, layers):
         super(ResNet, self).__init__()
         self.inplanes = 64
@@ -41,6 +51,10 @@ class ResNet(nn.Module):
         self.init_param()
 
     def init_param(self):
+        """
+        Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
+        Original Paper: https://osf.io/5a6m7/
+        """
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -54,6 +68,10 @@ class ResNet(nn.Module):
                 m.bias.data.zero_()
 
     def _make_layer(self, planes, blocks, stride=1):
+        """
+        Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
+        Original Paper: https://osf.io/5a6m7/
+        """
         downsample = None
         layers = []
 
@@ -72,6 +90,10 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        """
+        Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
+        Original Paper: https://osf.io/5a6m7/
+        """
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -90,6 +112,10 @@ class ResNet(nn.Module):
 
 
 class Bottleneck(nn.Module):
+    """
+    Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
+    Original Paper: https://osf.io/5a6m7/
+    """
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None):
@@ -106,6 +132,10 @@ class Bottleneck(nn.Module):
         self.stride = stride
 
     def forward(self, x):
+        """
+        Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
+        Original Paper: https://osf.io/5a6m7/
+        """
         residual = x
 
         out = self.conv1(x)
@@ -128,58 +158,108 @@ class Bottleneck(nn.Module):
         return out
 
 
-def run(input_file, model, cnn_face_detector, transform):
+def decode_data(encoded_data, debug=False):
+    """
+    Decode_data takes in a list of numbers produced by the DE1-SoC, which contains a single MCU encoded using DCT, combined with raw image data. 
+    This encoding describes a 224 pixel x 224 pixel single-channel (grayscale) image.
+    The result will be a full conversion into a three-channel RGB image in decode_data().
 
-    cap = cv2.VideoCapture(input_file)
+    The singular MCU encoded by the DE1 will be encoded using the following format: [mcu data before trailing zeroes, -391, number of trailing zeroes in mcu, -391]
 
-    if (cap.isOpened() == False):
-        print("Error opening video stream or file")
-        exit()
+    Returns a PIL RGB Image. 
 
-    # frame reading + processing
+    Note: debug flag controls whether image is shown. 
+    """
+    encoded_data = np.array(ast.literal_eval(encoded_data))
+    MCU_DIMENSIONS = (8, 8)
+    MCU_X_COUNT = 28
+    MCU_Y_COUNT = 28
+    MCU_TOTAL = MCU_X_COUNT * MCU_Y_COUNT
 
-    while(cap.isOpened()):
-        ret, frame = cap.read()
-        if ret == True:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            bbox = []
+    Y_QUANT_TABLE = np.array(
+        [[16, 11, 10, 16, 24, 40, 51, 61], [12, 12, 14, 19, 26, 58, 60, 55], [14, 13, 16, 24, 40, 57, 69, 56],
+         [14, 17, 22, 29, 51,
+         87, 80, 62], [18, 22, 37, 56, 68, 109, 103, 77], [24, 35, 55, 64, 81, 104, 113, 92],
+         [49, 64, 78, 87, 103, 121, 120, 101],
+         [72, 92, 95, 98, 112, 100, 103, 99]], dtype=np.int32)
 
-            dets = cnn_face_detector(frame, 1)
-            for d in tqdm(dets):
-                l = d.rect.left()
-                r = d.rect.right()
-                t = d.rect.top()
-                b = d.rect.bottom()
-                # expand a bit
-                l -= (r-l)*0.2
-                r += (r-l)*0.2
-                t -= (b-t)*0.2
-                b += (b-t)*0.2
-                bbox.append([l, t, r, b])
+    marker_index = np.where(encoded_data == -391)
+    if len(marker_index[0]) != 0:
+        # where the first -391 marker is
+        encoded_zero_start_marker = marker_index[0][0]
+        # where the second -391 marker is
+        encoded_zero_end_marker = marker_index[0][1]
+        top_left_mcu_flat = np.concatenate((encoded_data[0:encoded_zero_start_marker], np.zeros(
+            encoded_data[encoded_zero_start_marker + 1])))
 
-            frame = Image.fromarray(frame)
-            for b in bbox:
-                face = frame.crop((b))
-                img = transform(face)
-                img.unsqueeze_(0)
+        # Apart from the top left MCU, split rest of encoded data into "MCU" shaped blocks. These don't need decoding.
+        raw_data_without_top_left_mcu = np.split(
+            encoded_data[encoded_zero_end_marker + 1:], MCU_TOTAL - 1)
+    else:
+        top_left_mcu_flat = np.array(encoded_data[0:64])
+        raw_data_without_top_left_mcu = np.split(
+            encoded_data[64:], MCU_TOTAL - 1)
+    
+    # ------ DECODING -----
+    img_mcus = []
 
-                # forward pass
-                output = model(img)
-                score = torch.sigmoid(output).item()
+    if len(marker_index[0]) != 0:
+        # apply IDCT on the top left MCU if and only if we detect encoding.
+        idct_input = np.reshape(
+            top_left_mcu_flat, MCU_DIMENSIONS) * Y_QUANT_TABLE / 8
+        inverse_dct_output = fft.idctn(idct_input, type=2, norm='ortho')
+        img_mcus.append(inverse_dct_output)
+    else:
+        img_mcus.append(np.reshape(top_left_mcu_flat, MCU_DIMENSIONS))
+    
+    # ------ 
+    for raw_data in raw_data_without_top_left_mcu:
+        img_mcus.append(np.reshape(raw_data, MCU_DIMENSIONS))
 
-                print(score)
+    # ----- Form Final Image ---
+    img = []
+    for mcu_y in range(0, MCU_Y_COUNT):
+        img_row = []
+        for mcu_x in range(0, MCU_X_COUNT):
+            img_row.append(img_mcus[28*mcu_y + mcu_x])
+        img.append(img_row)
 
-        else:
-            break
-    cap.release()
-    print("Done processing image.")
+    final_img = im.fromarray(np.asarray(np.bmat(img))).convert("RGB")
+    if debug:
+        final_img.show()
+
+    return final_img
+
+
+def run(encoded_dct_output, model, transform):
+    """
+        Sourced and adapted from: https://github.com/rehg-lab/eye-contact-cnn
+        Original Paper: https://osf.io/5a6m7/
+
+        run() takes in and decodes a DCT output from the DE1-SoC, runs the eye contact ML model and logs the score to console 
+
+        encoded_dct_output: a path to a text file containing an encoded DCT output
+        model: the eye contact model
+        transform: the Tensor transformation to be applied on input images
+    """
+
+    with open(encoded_dct_output, "r") as f:
+        encoded_data = f.read()
+
+    frame = decode_data(encoded_data)
+    img = transform(frame)
+    img.unsqueeze_(0)
+    output = model(img)
+    score = torch.sigmoid(output).item()
+    print(score)
 
 
 def init_model():
-
-    # from http://dlib.net/files/mmod_human_face_detector.dat.bz2
-    CNN_FACE_MODEL = 'data/mmod_human_face_detector.dat'
-    model_weight = 'data/model_weights.pkl'
+    """
+    init_model() initializes the mdoel, loads weights, and the data transformation to be applied to input images
+    """
+    cnn_directory = pathlib.Path(__file__).parent
+    model_weight = f"{str(cnn_directory)}/data/model_weights.pkl"
 
     # load model weights
     model = model_static(model_weight)
@@ -189,32 +269,18 @@ def init_model():
     model.load_state_dict(model_dict)
     model.train(False)
 
-    cnn_face_detector = dlib.cnn_face_detection_model_v1(CNN_FACE_MODEL)
-
     # set up data transformation
     transform = transforms.Compose([transforms.Resize(224), transforms.CenterCrop(224), transforms.ToTensor(),
                                     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
-    return model, cnn_face_detector, transform
-
-
-def run_single_images(model, cnn_face_detector, transform):
-
-    run(input_file=f'/data/test_imgs/1_resized.jpg',
-        model=model,
-        cnn_face_detector=cnn_face_detector,
-        transform=transform)
+    return model, transform
 
 
 if __name__ == "__main__":
-    model, cnn_face_detector, transform = init_model()
-    if len(sys.argv) == 1:
-        raise SyntaxError("Insufficient arguments. Must supply a path")
-    if len(sys.argv) == 2:
-        # If there are keyword arguments
-        run(input_file=sys.argv[1], model=model,
-            cnn_face_detector=cnn_face_detector, transform=transform)
+    model, transform = init_model()
+    if len(sys.argv) != 2:
+        raise SyntaxError(
+            "Insufficient arguments. Supply a path to a text file containing a base-64 encoded JPEG")
     else:
-        # If there are no keyword arguments
-        run_single_images(
-            model=model, cnn_face_detector=cnn_face_detector, transform=transform)
+        # If there are keyword arguments
+        run(encoded_dct_output=sys.argv[1], model=model, transform=transform)
