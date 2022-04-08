@@ -21,7 +21,8 @@ VOLUME_MULTIPLIER = 42
 if not audio.open_dev():
     sys.exit()
 
-while True:
+# while True:
+for _ in range(1):
     print('Audio will be recorded at ' + str(SAMPLING_RATE) + ' Hz')
     print('Recording audio for ' + str(RECORDING_LENGTH) + ' seconds')
     wave_data = []
