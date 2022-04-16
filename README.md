@@ -5,3 +5,5 @@ Users can record themselves practicing interview questions and receive statistic
 This will allow users to self-evaluate their own interview performance.
 
 See the [Wiki](https://github.com/patrick-5546/virtual-interview-session/wiki) for this project's documentation.
+
+See the [Report](/docs/L2B-18%20Report.pdf) for a deep dive into project's features and implementation.
