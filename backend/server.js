@@ -8,7 +8,7 @@ const { json } = require('express/lib/response');
 const { dirname } = require('path/posix');
 const DATABASE_NAME = 'getstarted';
 const DATABASE_ADMIN_USERNAME = '2hyungyu';
-const DATABASE_ADMIN_PASSWORD = 'Daniel5642*';
+const DATABASE_ADMIN_PASSWORD = '*';
 const DATABASE_URL = 'mongodb+srv://2hyungyu:Daniel5642*@getstarted.rsnln.mongodb.net/myFirstDatabase?retryWrites=true&w=majority';
 var db = new Database(DATABASE_URL, DATABASE_NAME);
 const {PythonShell} = require('python-shell');
